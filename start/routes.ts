@@ -31,3 +31,9 @@ Route.get('/shader-descriptors/:id', 'FilesController.getShaderDescriptor')
 Route.post('/material/:file', 'FilesController.uploadMaterial')
 
 Route.get('/shader-list', 'FilesController.getShaderList')
+
+Route.post('/models', 'ModelsController.uploadModel')
+Route.get('/models-list', 'ModelsController.getModelList')
+
+Route.post('/textures', 'TexturesController.uploadTexture')
+Route.get('/textures-list', 'TexturesController.getTextureList')

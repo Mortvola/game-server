@@ -19,3 +19,5 @@ logs
 .pnp.*
 .yarn-integrity
 public
+/uploads
+/public.old
