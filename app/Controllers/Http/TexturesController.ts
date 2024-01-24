@@ -1,5 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Texture from 'App/Models/Texture'
+import Drive from '@ioc:Adonis/Core/Drive'
 
 export default class TexturesController {
   public async uploadTexture ({ request }: HttpContextContract): Promise<void> {
@@ -24,9 +25,15 @@ export default class TexturesController {
     }
   }
 
-  public async getTextureList ({}: HttpContextContract): Promise<{ id: number, name: string }[]> {
-    const models = await Texture.all()
+  public async getTexture ({ params, response }: HttpContextContract) {
+    const texture = await Texture.findOrFail(params.id)
 
-    return models.map((t) => ({ id: t.id, name: t.name }))
+    response.stream(await Drive.getStream(`textures/${texture.filename}`))
+  }
+
+  public async getTextureList ({}: HttpContextContract): Promise<{ id: number, name: string }[]> {
+    const textures = await Texture.all()
+
+    return textures.map((t) => ({ id: t.id, name: t.name }))
   }
 }

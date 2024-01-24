@@ -28,7 +28,8 @@ Route.post('/shader-descriptors', 'FilesController.uploadShaderDescriptor')
 Route.patch('/shader-descriptors/:id', 'FilesController.updateShaderDescriptor')
 Route.get('/shader-descriptors/:id', 'FilesController.getShaderDescriptor')
 
-Route.post('/material/:file', 'FilesController.uploadMaterial')
+Route.post('/materials', 'MaterialsController.uploadMaterial')
+Route.get('/materials-list', 'MaterialsController.getMaterialList')
 
 Route.get('/shader-list', 'FilesController.getShaderList')
 
@@ -36,4 +37,5 @@ Route.post('/models', 'ModelsController.uploadModel')
 Route.get('/models-list', 'ModelsController.getModelList')
 
 Route.post('/textures', 'TexturesController.uploadTexture')
+Route.get('/textures/:id', 'TexturesController.getTexture')
 Route.get('/textures-list', 'TexturesController.getTextureList')
