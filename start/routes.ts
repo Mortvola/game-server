@@ -39,3 +39,6 @@ Route.get('/models-list', 'ModelsController.getModelList')
 Route.post('/textures', 'TexturesController.uploadTexture')
 Route.get('/textures/:id', 'TexturesController.getTexture')
 Route.get('/textures-list', 'TexturesController.getTextureList')
+
+Route.post('/game-objects', 'GameObjectsController.uploadGameObject')
+Route.get('/game-objects-list', 'GameObjectsController.getGameObjectList')
