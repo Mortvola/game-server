@@ -28,6 +28,6 @@ export default class MaterialsController {
   public async getMaterialList ({}: HttpContextContract): Promise<{ id: number, name: string }[]> {
     const materials = await Material.all()
 
-    return materials.map((t) => ({ id: t.id, name: t.name }))
+    return materials.map((t) => ({ id: t.id, name: t.name, shaderId: t.shaderId }))
   }
 }

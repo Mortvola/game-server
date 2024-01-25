@@ -1,5 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Model from 'App/Models/Model'
+import Drive from '@ioc:Adonis/Core/Drive'
 
 export default class ModelsController {
   public async uploadModel ({ request }: HttpContextContract): Promise<void> {
@@ -22,6 +23,12 @@ export default class ModelsController {
       console.log(error)
       throw error
     }
+  }
+
+  public async getModel ({ params, response }: HttpContextContract) {
+    const model = await Model.findOrFail(params.id)
+
+    response.stream(await Drive.getStream(`models/${model.filename}`))
   }
 
   public async getModelList ({}: HttpContextContract): Promise<{ id: number, name: string }[]> {
