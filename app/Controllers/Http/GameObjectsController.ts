@@ -32,9 +32,9 @@ export default class GameObjectsController {
     }
   }
 
-  public async getGameObjectList ({}: HttpContextContract): Promise<{ id: number, name: string }[]> {
+  public async getGameObjectList ({}: HttpContextContract) {
     const objects = await GameObject.all()
 
-    return objects.map((t) => ({ id: t.id, name: t.name }))
+    return objects
   }
 }
