@@ -1,5 +1,4 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Drive from '@ioc:Adonis/Core/Drive'
 import ShaderDescriptor from 'App/Models/ShaderDescriptor'
 
 export default class FilesController {
@@ -51,14 +50,6 @@ export default class FilesController {
 
     if (shaderDescriptor) {
       await shaderDescriptor.delete()
-    }
-  }
-
-  public async uploadMaterial ({ request, params }: HttpContextContract): Promise<void> {
-    try {
-      await Drive.put(`material/${params.file}`, JSON.stringify(request.body()))
-    } catch (error) {
-      console.log(error)
     }
   }
 
