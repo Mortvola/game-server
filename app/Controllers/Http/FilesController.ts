@@ -46,6 +46,14 @@ export default class FilesController {
     }
   }
 
+  public async deleteShaderDescriptor ({ request, params }: HttpContextContract): Promise<void> {
+    const shaderDescriptor = await ShaderDescriptor.find(params.id)
+
+    if (shaderDescriptor) {
+      await shaderDescriptor.delete()
+    }
+  }
+
   public async uploadMaterial ({ request, params }: HttpContextContract): Promise<void> {
     try {
       await Drive.put(`material/${params.file}`, JSON.stringify(request.body()))

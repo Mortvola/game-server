@@ -25,6 +25,14 @@ export default class MaterialsController {
     return Material.findOrFail(params.id)
   }
 
+  public async deleteMaterial ({ params }: HttpContextContract) {
+    const material = await Material.find(params.id)
+
+    if (material) {
+      await material.delete()
+    }
+  }
+
   public async getMaterialList ({}: HttpContextContract): Promise<Material[]> {
     const materials = await Material.all()
 

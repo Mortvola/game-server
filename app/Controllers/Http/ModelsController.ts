@@ -31,6 +31,15 @@ export default class ModelsController {
     response.stream(await Drive.getStream(`models/${model.filename}`))
   }
 
+  public async deleteModel ({ params }: HttpContextContract) {
+    const model = await Model.find(params.id)
+
+    if (model) {
+      await Drive.delete(`models/${model.filename}`)
+      await model.delete()
+    }
+  }
+
   public async getModelList ({}: HttpContextContract): Promise<{ id: number, name: string }[]> {
     const models = await Model.all()
 

@@ -26,22 +26,27 @@ Route.get('/', async ({ view }) => {
 
 Route.post('/shader-descriptors', 'FilesController.uploadShaderDescriptor')
 Route.patch('/shader-descriptors/:id', 'FilesController.updateShaderDescriptor')
+Route.delete('/shader-descriptors/:id', 'FilesController.deleteShaderDescriptor')
 Route.get('/shader-descriptors/:id', 'FilesController.getShaderDescriptor')
 
 Route.post('/materials', 'MaterialsController.uploadMaterial')
 Route.get('/materials/:id', 'MaterialsController.getMaterial')
+Route.delete('/materials/:id', 'MaterialsController.deleteMaterial')
 Route.get('/materials-list', 'MaterialsController.getMaterialList')
 
 Route.get('/shader-list', 'FilesController.getShaderList')
 
 Route.post('/models', 'ModelsController.uploadModel')
 Route.get('/models/:id', 'ModelsController.getModel')
+Route.delete('/models/:id', 'ModelsController.deleteModel')
 Route.get('/models-list', 'ModelsController.getModelList')
 
 Route.post('/textures', 'TexturesController.uploadTexture')
 Route.get('/textures/:id', 'TexturesController.getTexture')
+Route.delete('/textures/:id', 'TexturesController.deleteTexture')
 Route.get('/textures-list', 'TexturesController.getTextureList')
 
 Route.post('/game-objects', 'GameObjectsController.uploadGameObject')
 Route.get('/game-objects/:id', 'GameObjectsController.getGameObject')
+Route.delete('/game-objects/:id', 'GameObjectsController.deleteGameObject')
 Route.get('/game-objects-list', 'GameObjectsController.getGameObjectList')

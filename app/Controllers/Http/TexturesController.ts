@@ -31,6 +31,15 @@ export default class TexturesController {
     response.stream(await Drive.getStream(`textures/${texture.filename}`))
   }
 
+  public async deleteTexture ({ params }: HttpContextContract) {
+    const texture = await Texture.find(params.id)
+
+    if (texture) {
+      Drive.delete(`textures/${texture.filename}`)
+      await texture.delete()
+    }
+  }
+
   public async getTextureList ({}: HttpContextContract): Promise<{ id: number, name: string }[]> {
     const textures = await Texture.all()
 

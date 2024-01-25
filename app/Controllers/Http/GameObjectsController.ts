@@ -24,6 +24,14 @@ export default class GameObjectsController {
     return GameObject.findOrFail(params.id)
   }
 
+  public async deleteGameObject ({ params }: HttpContextContract) {
+    const object = await GameObject.find(params.id)
+
+    if (object) {
+      await object.delete()
+    }
+  }
+
   public async getGameObjectList ({}: HttpContextContract): Promise<{ id: number, name: string }[]> {
     const objects = await GameObject.all()
 
