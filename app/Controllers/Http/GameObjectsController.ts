@@ -24,6 +24,16 @@ export default class GameObjectsController {
     return GameObject.findOrFail(params.id)
   }
 
+  public async updateGameObject ({ request, params }: HttpContextContract) {
+    const object = await GameObject.findOrFail(params.id)
+
+    object.merge(
+      request.body(),
+    )
+
+    await object.save()
+  }
+
   public async deleteGameObject ({ params }: HttpContextContract) {
     const object = await GameObject.find(params.id)
 
