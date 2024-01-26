@@ -2,7 +2,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import GameObject from 'App/Models/GameObject'
 
 export default class GameObjectsController {
-  public async uploadGameObject ({ request }: HttpContextContract): Promise<void> {
+  public async uploadGameObject ({ request }: HttpContextContract): Promise<GameObject> {
     try {
       const object = new GameObject()
 
@@ -14,6 +14,8 @@ export default class GameObjectsController {
       })
 
       await object.save()
+
+      return object
     } catch (error) {
       console.log(error)
       throw error
