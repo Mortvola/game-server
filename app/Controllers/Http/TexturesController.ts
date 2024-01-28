@@ -25,7 +25,13 @@ export default class TexturesController {
     }
   }
 
-  public async getTexture ({ params, response }: HttpContextContract) {
+  public async getTexture ({ params }: HttpContextContract) {
+    const texture = await Texture.findOrFail(params.id)
+
+    return texture
+  }
+
+  public async getTextureFile ({ params, response }: HttpContextContract) {
     const texture = await Texture.findOrFail(params.id)
 
     response.stream(await Drive.getStream(`textures/${texture.filename}`))

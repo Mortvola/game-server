@@ -16,4 +16,7 @@ export default class Texture extends BaseModel {
 
   @column()
   public filename: string
+
+  @column()
+  public flipY: boolean
 }
