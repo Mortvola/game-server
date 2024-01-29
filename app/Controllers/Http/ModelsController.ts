@@ -3,7 +3,7 @@ import Model from 'App/Models/Model'
 import Drive from '@ioc:Adonis/Core/Drive'
 
 export default class ModelsController {
-  public async uploadModel ({ request }: HttpContextContract): Promise<void> {
+  public async uploadModel ({ request }: HttpContextContract): Promise<{ id: number, name: string }> {
     try {
       const file = request.file('file')
 
@@ -18,11 +18,15 @@ export default class ModelsController {
         })
 
         await model.save()
+
+        return { id: model.id, name: model.name }
       }
     } catch (error) {
       console.log(error)
       throw error
     }
+
+    throw new Error('upload failed')
   }
 
   public async getModel ({ params, response }: HttpContextContract) {
