@@ -31,6 +31,16 @@ export default class ModelsController {
     response.stream(await Drive.getStream(`models/${model.filename}`))
   }
 
+  public async updateModel ({ params, request }: HttpContextContract) {
+    const model = await Model.findOrFail(params.id)
+
+    model.merge(
+      request.body(),
+    )
+
+    await model.save()
+  }
+
   public async deleteModel ({ params }: HttpContextContract) {
     const model = await Model.find(params.id)
 

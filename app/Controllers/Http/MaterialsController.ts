@@ -25,6 +25,16 @@ export default class MaterialsController {
     return Material.findOrFail(params.id)
   }
 
+  public async updateMaterial ({ params, request }: HttpContextContract) {
+    const material = await Material.findOrFail(params.id)
+
+    material.merge(
+      request.body(),
+    )
+
+    await material.save()
+  }
+
   public async deleteMaterial ({ params }: HttpContextContract) {
     const material = await Material.find(params.id)
 
