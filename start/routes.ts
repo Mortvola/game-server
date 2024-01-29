@@ -43,6 +43,7 @@ Route.get('/models-list', 'ModelsController.getModelList')
 
 Route.post('/textures', 'TexturesController.uploadTexture')
 Route.get('/textures/:id', 'TexturesController.getTexture')
+Route.patch('/textures/:id', 'TexturesController.updateTexture')
 Route.get('/textures/:id/file', 'TexturesController.getTextureFile')
 Route.delete('/textures/:id', 'TexturesController.deleteTexture')
 Route.get('/textures-list', 'TexturesController.getTextureList')

@@ -37,6 +37,16 @@ export default class TexturesController {
     response.stream(await Drive.getStream(`textures/${texture.filename}`))
   }
 
+  public async updateTexture ({ request, params }: HttpContextContract) {
+    const texture = await Texture.findOrFail(params.id)
+
+    texture.merge(
+      request.body(),
+    )
+
+    await texture.save()
+  }
+
   public async deleteTexture ({ params }: HttpContextContract) {
     const texture = await Texture.find(params.id)
 
@@ -49,6 +59,6 @@ export default class TexturesController {
   public async getTextureList ({}: HttpContextContract): Promise<{ id: number, name: string }[]> {
     const textures = await Texture.all()
 
-    return textures.map((t) => ({ id: t.id, name: t.name }))
+    return textures.map((t) => ({ id: t.id, name: t.name, flipY: t.flipY }))
   }
 }
