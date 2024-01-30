@@ -14,7 +14,7 @@ export default class Texture extends BaseModel {
   @column()
   public name: string
 
-  @column()
+  @column({serializeAs: null })
   public filename: string
 
   @column()
