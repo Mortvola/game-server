@@ -1,25 +1,57 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Texture from 'App/Models/Texture'
 import Drive from '@ioc:Adonis/Core/Drive'
+import Database from '@ioc:Adonis/Lucid/Database'
+import FolderItem from 'App/Models/FolderItem'
 
 export default class TexturesController {
-  public async uploadTexture ({ request }: HttpContextContract): Promise<void> {
+  public async uploadTexture ({ request }: HttpContextContract) {
+    const trx = await Database.transaction()
+
     try {
       const file = request.file('file')
 
-      await file?.moveToDisk('textures')
+      if (file) {
+        await file?.moveToDisk('textures')
 
-      if (file?.fileName) {
-        const model = new Texture()
+        if (file.fileName) {
+          const model = new Texture().useTransaction(trx)
 
-        model.fill({
-          name: file?.clientName ?? 'file',
-          filename: file?.fileName,
-        })
+          model.fill({
+            name: file.clientName ?? 'file',
+            filename: file.fileName,
+          })
 
-        await model.save()
+          await model.save()
+
+          let parentId = request.qs().parentId
+
+          if (parentId) {
+            parentId = parseInt(parentId)
+
+            if (isNaN(parentId)) {
+              parentId = null
+            }
+          }
+
+          const folder = new FolderItem().useTransaction(trx)
+
+          folder.fill({
+            name: model.name,
+            itemId: model.id,
+            parentId,
+            type: 'model',
+          })
+
+          await folder.save()
+
+          await trx.commit()
+
+          return folder
+        }
       }
     } catch (error) {
+      await trx.rollback()
       console.log(error)
       throw error
     }

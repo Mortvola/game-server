@@ -1,10 +1,13 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Database from '@ioc:Adonis/Lucid/Database'
+import FolderItem from 'App/Models/FolderItem'
 import GameObject from 'App/Models/GameObject'
 
 export default class GameObjectsController {
-  public async uploadGameObject ({ request }: HttpContextContract): Promise<GameObject> {
+  public async uploadGameObject ({ request }: HttpContextContract) {
+    const trx = await Database.transaction()
     try {
-      const object = new GameObject()
+      const object = new GameObject().useTransaction(trx)
 
       const payload = request.body()
 
@@ -15,8 +18,32 @@ export default class GameObjectsController {
 
       await object.save()
 
-      return object
+      let parentId = request.qs().parentId
+
+      if (parentId) {
+        parentId = parseInt(parentId)
+
+        if (isNaN(parentId)) {
+          parentId = null
+        }
+      }
+
+      const folder = new FolderItem().useTransaction(trx)
+
+      folder.fill({
+        name: object.name,
+        itemId: object.id,
+        parentId,
+        type: 'object',
+      })
+
+      await folder.save()
+
+      trx.commit()
+
+      return folder
     } catch (error) {
+      await trx.rollback()
       console.log(error)
       throw error
     }

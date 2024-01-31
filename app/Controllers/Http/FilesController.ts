@@ -1,27 +1,56 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Database from '@ioc:Adonis/Lucid/Database'
+import FolderItem from 'App/Models/FolderItem'
 import ShaderDescriptor from 'App/Models/ShaderDescriptor'
 
 export default class FilesController {
   public async getShaderDescriptor ({ params }: HttpContextContract): Promise<unknown> {
-    const descriptor = await ShaderDescriptor.findOrFail(params.id)
+    const shader = await ShaderDescriptor.findOrFail(params.id)
 
-    return {
-      name: descriptor.name,
-      descriptor: descriptor.descriptor,
-    }
+    return shader
   }
 
   public async uploadShaderDescriptor ({ request }: HttpContextContract): Promise<{ id: number }> {
+    const trx = await Database.transaction()
+
     try {
       const t = request.body()
 
-      const shaderDescriptor = await ShaderDescriptor.create({
+      const shader = await new ShaderDescriptor().useTransaction(trx)
+
+      shader.fill({
         name: t.name,
         descriptor: t.descriptor,
       })
 
-      return ({ id: shaderDescriptor.id })
+      await shader.save()
+
+      let parentId = request.qs().parentId
+
+      if (parentId) {
+        parentId = parseInt(parentId)
+
+        if (isNaN(parentId)) {
+          parentId = null
+        }
+      }
+
+      const folder = new FolderItem().useTransaction(trx)
+
+      folder.fill({
+        name: shader.name,
+        itemId: shader.id,
+        parentId,
+        type: 'shader',
+      })
+
+      await folder.save()
+
+      await trx.commit()
+
+      return folder
     } catch (error) {
+      trx.rollback()
       console.log(error)
       throw error
     }
