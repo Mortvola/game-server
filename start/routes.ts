@@ -24,34 +24,56 @@ Route.get('/', async ({ view }) => {
   return view.render('welcome')
 })
 
-Route.post('/shader-descriptors', 'FilesController.uploadShaderDescriptor')
-Route.patch('/shader-descriptors/:id', 'FilesController.updateShaderDescriptor')
-Route.delete('/shader-descriptors/:id', 'FilesController.deleteShaderDescriptor')
-Route.get('/shader-descriptors/:id', 'FilesController.getShaderDescriptor')
-
-Route.post('/materials', 'MaterialsController.uploadMaterial')
-Route.get('/materials/:id', 'MaterialsController.getMaterial')
-Route.patch('/materials/:id', 'MaterialsController.updateMaterial')
-Route.delete('/materials/:id', 'MaterialsController.deleteMaterial')
-Route.get('/materials-list', 'MaterialsController.getMaterialList')
+Route.group(() => {
+  Route.post('', 'FilesController.uploadShaderDescriptor')
+  Route.patch('/:id', 'FilesController.updateShaderDescriptor')
+  Route.delete('/:id', 'FilesController.deleteShaderDescriptor')
+  Route.get('/:id', 'FilesController.getShaderDescriptor')
+}).prefix('/shader-descriptors')
 
 Route.get('/shader-list', 'FilesController.getShaderList')
 
-Route.post('/models', 'ModelsController.uploadModel')
-Route.get('/models/:id', 'ModelsController.getModel')
-Route.patch('/models/:id', 'ModelsController.updateModel')
-Route.delete('/models/:id', 'ModelsController.deleteModel')
+Route.group(() => {
+  Route.post('', 'MaterialsController.uploadMaterial')
+  Route.get('/:id', 'MaterialsController.getMaterial')
+  Route.patch('/:id', 'MaterialsController.updateMaterial')
+  Route.delete('/:id', 'MaterialsController.deleteMaterial')
+}).prefix('/materials')
+
+Route.get('/materials-list', 'MaterialsController.getMaterialList')
+
+Route.group(() => {
+  Route.post('', 'ModelsController.uploadModel')
+  Route.get('/:id', 'ModelsController.getModel')
+  Route.patch('/:id', 'ModelsController.updateModel')
+  Route.delete('/:id', 'ModelsController.deleteModel')
+}).prefix('/models')
+
 Route.get('/models-list', 'ModelsController.getModelList')
 
-Route.post('/textures', 'TexturesController.uploadTexture')
-Route.get('/textures/:id', 'TexturesController.getTexture')
-Route.patch('/textures/:id', 'TexturesController.updateTexture')
-Route.get('/textures/:id/file', 'TexturesController.getTextureFile')
-Route.delete('/textures/:id', 'TexturesController.deleteTexture')
+Route.group(() => {
+  Route.post('', 'TexturesController.uploadTexture')
+  Route.get('/:id', 'TexturesController.getTexture')
+  Route.patch('/:id', 'TexturesController.updateTexture')
+  Route.get('/:id/file', 'TexturesController.getTextureFile')
+  Route.delete('/:id', 'TexturesController.deleteTexture')
+}).prefix('/textures')
+
 Route.get('/textures-list', 'TexturesController.getTextureList')
 
-Route.post('/game-objects', 'GameObjectsController.uploadGameObject')
-Route.get('/game-objects/:id', 'GameObjectsController.getGameObject')
-Route.delete('/game-objects/:id', 'GameObjectsController.deleteGameObject')
-Route.patch('/game-objects/:id', 'GameObjectsController.updateGameObject')
-Route.get('/game-objects-list', 'GameObjectsController.getGameObjectList')
+Route.group(() => {
+  Route.post('', 'GameObjectsController.uploadGameObject')
+  Route.get('/:id', 'GameObjectsController.getGameObject')
+  Route.delete('/:id', 'GameObjectsController.deleteGameObject')
+  Route.patch('/:id', 'GameObjectsController.updateGameObject')
+}).prefix('/game-objects')
+
+Route.get('game-objects-list', 'GameObjectsController.getGameObjectList')
+
+Route.group(() => {
+  Route.get('', 'FoldersController.getFolder')
+  Route.get('/:id', 'FoldersController.getFolder')
+  Route.post('', 'FoldersController.makeFolder')
+  Route.patch('/:id', 'FoldersController.updateFolder')
+  Route.delete('/:id', 'FoldersController.deleteItem')
+}).prefix('/folders')
