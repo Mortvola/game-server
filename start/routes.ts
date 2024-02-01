@@ -77,3 +77,9 @@ Route.group(() => {
   Route.patch('/:id', 'FoldersController.updateFolder')
   Route.delete('/:id', 'FoldersController.deleteItem')
 }).prefix('/folders')
+
+Route.group(() => {
+  Route.post('', 'ParticlesController.uploadParticle')
+  Route.get('/:id', 'ParticlesController.getParticle')
+  Route.patch('/:id', 'ParticlesController.updateParticle')
+}).prefix('/particles')

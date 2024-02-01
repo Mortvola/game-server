@@ -7,6 +7,7 @@ import ShaderDescriptor from 'App/Models/ShaderDescriptor'
 import Texture from 'App/Models/Texture'
 import Drive from '@ioc:Adonis/Core/Drive'
 import Database from '@ioc:Adonis/Lucid/Database'
+import Particle from 'App/Models/Particle'
 
 export default class FoldersController {
   public async getFolder ({ params }: HttpContextContract) {
@@ -78,10 +79,18 @@ export default class FoldersController {
               await model.delete()
             }
             break
+
+          case 'particle':
+            const particle = await Particle.find(item.itemId, { client: trx })
+
+            if (particle) {
+              await particle.delete()
+            }
+            break
         }
       }
 
-      trx.commit()
+      await trx.commit()
     } catch (error) {
       await trx.rollback()
 
