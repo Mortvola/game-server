@@ -40,7 +40,7 @@ export default class TexturesController {
             name: model.name,
             itemId: model.id,
             parentId,
-            type: 'model',
+            type: 'texture',
           })
 
           await folder.save()

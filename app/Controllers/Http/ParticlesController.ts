@@ -39,7 +39,7 @@ export default class ParticlesController {
 
       await folder.save()
 
-      trx.commit()
+      await trx.commit()
 
       return folder
     } catch (error) {

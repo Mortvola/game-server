@@ -39,7 +39,7 @@ export default class GameObjectsController {
 
       await folder.save()
 
-      trx.commit()
+      await trx.commit()
 
       return folder
     } catch (error) {
@@ -50,7 +50,35 @@ export default class GameObjectsController {
   }
 
   public async getGameObject ({ params }: HttpContextContract) {
-    return GameObject.findOrFail(params.id)
+    const object = await GameObject.findOrFail(params.id)
+
+    const oldObject = object.object as {
+      modelId: number,
+      materials: unknown,
+      items?: unknown[],
+      x?: number,
+      y?: number,
+      width?: number,
+      height?: number,
+    }
+
+    if (oldObject.modelId !== undefined) {
+      const newObject: {
+        items: unknown[],
+      } = {
+        items: [],
+      }
+
+      newObject.items.push({ item: { id: oldObject.modelId, materials: oldObject.materials }, type: 'model' })
+
+      object.object = newObject
+    } else if (oldObject.x !== undefined && oldObject.y !== undefined) {
+      object.object = { ...oldObject }
+    } else if (oldObject.items === undefined) {
+      object.object = { items: [] }
+    }
+
+    return object
   }
 
   public async updateGameObject ({ request, params }: HttpContextContract) {
@@ -74,6 +102,33 @@ export default class GameObjectsController {
   public async getGameObjectList ({}: HttpContextContract) {
     const objects = await GameObject.all()
 
+    for (let i = 0; i < objects.length; i += 1) {
+      const oldObject = objects[i].object as {
+        modelId: number,
+        materials: unknown,
+        items?: unknown[],
+        x?: number,
+        y?: number,
+        width?: number,
+        height?: number,
+      }
+
+      if (oldObject.modelId !== undefined) {
+        const newObject: {
+          items: unknown[],
+        } = {
+          items: [],
+        }
+
+        newObject.items.push({ item: { id: oldObject.modelId, materials: oldObject.materials }, type: 'model' })
+
+        objects[i].object = newObject
+      } else if (oldObject.x !== undefined && oldObject.y !== undefined) {
+        objects[i].object = { ...oldObject }
+      } else if (oldObject.items === undefined) {
+        objects[i].object = { items: [] }
+      }
+    }
     return objects
   }
 }

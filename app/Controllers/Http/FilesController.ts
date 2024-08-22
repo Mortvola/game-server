@@ -7,6 +7,16 @@ export default class FilesController {
   public async getShaderDescriptor ({ params }: HttpContextContract): Promise<unknown> {
     const shader = await ShaderDescriptor.findOrFail(params.id)
 
+    // Change the key 'graph' to 'graphDescriptor'.
+    if (
+      (shader.descriptor as { graph: unknown }).graph !== undefined &&
+      (shader.descriptor as { graphDescriptor: unknown }).graphDescriptor === undefined
+    ) {
+      (shader.descriptor as { graphDescriptor: unknown }).graphDescriptor
+        = (shader.descriptor as { graph: unknown }).graph
+      delete (shader.descriptor as { graph: unknown }).graph
+    }
+
     return shader
   }
 

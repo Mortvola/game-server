@@ -19,6 +19,8 @@
 */
 
 import Route from '@ioc:Adonis/Core/Route'
+import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Drive from '@ioc:Adonis/Core/Drive'
 
 Route.get('/', async ({ view }) => {
   return view.render('welcome')
@@ -83,3 +85,8 @@ Route.group(() => {
   Route.get('/:id', 'ParticlesController.getParticle')
   Route.patch('/:id', 'ParticlesController.updateParticle')
 }).prefix('/particles')
+
+Route.get('/fonts/OpenSans-Regular-msdf.json', async ({ response }: HttpContextContract) => {
+  // response.notFound()
+  response.stream(await Drive.getStream('/fonts/OpenSans-Regular-msdf.json'))
+})

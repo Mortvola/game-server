@@ -1,10 +1,14 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Database from '@ioc:Adonis/Lucid/Database'
+import FolderItem from 'App/Models/FolderItem'
 import Material from 'App/Models/Material'
 
 export default class MaterialsController {
-  public async uploadMaterial ({ request }: HttpContextContract): Promise<void> {
+  public async uploadMaterial ({ request }: HttpContextContract) {
+    const trx = await Database.transaction()
+
     try {
-      const material = new Material()
+      const material = new Material().useTransaction(trx)
 
       const payload = request.body()
 
@@ -15,6 +19,31 @@ export default class MaterialsController {
       })
 
       await material.save()
+
+      let parentId = request.qs().parentId
+
+      if (parentId) {
+        parentId = parseInt(parentId)
+
+        if (isNaN(parentId)) {
+          parentId = null
+        }
+      }
+
+      const folder = new FolderItem().useTransaction(trx)
+
+      folder.fill({
+        name: material.name,
+        itemId: material.id,
+        parentId,
+        type: 'material',
+      })
+
+      await folder.save()
+
+      await trx.commit()
+
+      return folder
     } catch (error) {
       console.log(error)
       throw error
