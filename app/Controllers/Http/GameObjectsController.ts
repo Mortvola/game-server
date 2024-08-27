@@ -1,6 +1,5 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
-import FolderItem from 'App/Models/FolderItem'
 import GameObject from 'App/Models/GameObject'
 
 export default class GameObjectsController {
@@ -18,30 +17,30 @@ export default class GameObjectsController {
 
       await object.save()
 
-      let parentId = request.qs().parentId
+      // let parentId = request.qs().parentId
 
-      if (parentId) {
-        parentId = parseInt(parentId)
+      // if (parentId) {
+      //   parentId = parseInt(parentId)
 
-        if (isNaN(parentId)) {
-          parentId = null
-        }
-      }
+      //   if (isNaN(parentId)) {
+      //     parentId = null
+      //   }
+      // }
 
-      const folder = new FolderItem().useTransaction(trx)
+      // const folder = new FolderItem().useTransaction(trx)
 
-      folder.fill({
-        name: object.name,
-        itemId: object.id,
-        parentId,
-        type: 'object',
-      })
+      // folder.fill({
+      //   name: object.name,
+      //   itemId: object.id,
+      //   parentId,
+      //   type: 'object',
+      // })
 
-      await folder.save()
+      // await folder.save()
 
       await trx.commit()
 
-      return folder
+      return object
     } catch (error) {
       await trx.rollback()
       console.log(error)
@@ -52,31 +51,31 @@ export default class GameObjectsController {
   public async getGameObject ({ params }: HttpContextContract) {
     const object = await GameObject.findOrFail(params.id)
 
-    const oldObject = object.object as {
-      modelId: number,
-      materials: unknown,
-      items?: unknown[],
-      x?: number,
-      y?: number,
-      width?: number,
-      height?: number,
-    }
+    // const oldObject = object.object as {
+    //   modelId: number,
+    //   materials: unknown,
+    //   items?: unknown[],
+    //   x?: number,
+    //   y?: number,
+    //   width?: number,
+    //   height?: number,
+    // }
 
-    if (oldObject.modelId !== undefined) {
-      const newObject: {
-        items: unknown[],
-      } = {
-        items: [],
-      }
+    // if (oldObject.modelId !== undefined) {
+    //   const newObject: {
+    //     items: unknown[],
+    //   } = {
+    //     items: [],
+    //   }
 
-      newObject.items.push({ item: { id: oldObject.modelId, materials: oldObject.materials }, type: 'model' })
+    //   newObject.items.push({ item: { id: oldObject.modelId, materials: oldObject.materials }, type: 'model' })
 
-      object.object = newObject
-    } else if (oldObject.x !== undefined && oldObject.y !== undefined) {
-      object.object = { ...oldObject }
-    } else if (oldObject.items === undefined) {
-      object.object = { items: [] }
-    }
+    //   object.object = newObject
+    // } else if (oldObject.x !== undefined && oldObject.y !== undefined) {
+    //   object.object = { ...oldObject }
+    // } else if (oldObject.items === undefined) {
+    //   object.object = { items: [] }
+    // }
 
     return object
   }

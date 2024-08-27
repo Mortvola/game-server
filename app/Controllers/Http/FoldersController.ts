@@ -8,6 +8,7 @@ import Texture from 'App/Models/Texture'
 import Drive from '@ioc:Adonis/Core/Drive'
 import Database from '@ioc:Adonis/Lucid/Database'
 import Particle from 'App/Models/Particle'
+import { schema, rules } from '@ioc:Adonis/Core/Validator'
 
 export default class FoldersController {
   public async getFolder ({ params }: HttpContextContract) {
@@ -113,5 +114,29 @@ export default class FoldersController {
     await folder.save()
 
     return folder
+  }
+
+  public async makeItem ({ request }: HttpContextContract) {
+    const requestData = await request.validate({
+      schema: schema.create({
+        parentId: schema.number(),
+        name: schema.string([rules.trim()]),
+        itemId: schema.number(),
+        type: schema.string([rules.trim()]),
+      }),
+    })
+
+    const item = new FolderItem()
+
+    item.fill({
+      name: requestData.name,
+      itemId: requestData.itemId,
+      parentId: requestData.parentId,
+      type: requestData.type,
+    })
+
+    await item.save()
+
+    return item
   }
 }

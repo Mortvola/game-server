@@ -68,14 +68,22 @@ Route.group(() => {
   Route.get('/:id', 'GameObjectsController.getGameObject')
   Route.delete('/:id', 'GameObjectsController.deleteGameObject')
   Route.patch('/:id', 'GameObjectsController.updateGameObject')
-}).prefix('/game-objects')
+}).prefix('/scene-objects')
 
-Route.get('game-objects-list', 'GameObjectsController.getGameObjectList')
+Route.get('scene-objects-list', 'GameObjectsController.getGameObjectList')
+
+Route.group(() => {
+  Route.post('', 'PrefabsController.post')
+  Route.get('/:id', 'PrefabsController.get')
+  Route.delete('/:id', 'PrefabsController.delete')
+  Route.patch('/:id', 'PrefabsController.patch')
+}).prefix('/prefabs')
 
 Route.group(() => {
   Route.get('', 'FoldersController.getFolder')
   Route.get('/:id', 'FoldersController.getFolder')
   Route.post('', 'FoldersController.makeFolder')
+  Route.post('/item', 'FoldersController.makeItem')
   Route.patch('/:id', 'FoldersController.updateFolder')
   Route.delete('/:id', 'FoldersController.deleteItem')
 }).prefix('/folders')
@@ -86,7 +94,12 @@ Route.group(() => {
   Route.patch('/:id', 'ParticlesController.updateParticle')
 }).prefix('/particles')
 
+Route.group(() => {
+  Route.post('', 'ScenesController.uploadScene')
+  Route.get('/:id', 'ScenesController.getScene')
+  Route.patch('/:id', 'ScenesController.updateScene')
+}).prefix('/scenes')
+
 Route.get('/fonts/OpenSans-Regular-msdf.json', async ({ response }: HttpContextContract) => {
-  // response.notFound()
   response.stream(await Drive.getStream('/fonts/OpenSans-Regular-msdf.json'))
 })
