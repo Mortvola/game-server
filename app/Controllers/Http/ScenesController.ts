@@ -1,5 +1,5 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Scene from 'App/Models/Scene'
+import Scene, { SceneData } from 'App/Models/Scene'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
 import Database from '@ioc:Adonis/Lucid/Database'
 import FolderItem from 'App/Models/FolderItem'
@@ -9,7 +9,9 @@ export default class ScenesController {
     const requestData = await request.validate({
       schema: schema.create({
         name: schema.string([rules.trim()]),
-        scene: schema.object().anyMembers(),
+        scene: schema.object().members({
+          objects: schema.number(),
+        }),
       }),
     })
 
@@ -62,7 +64,9 @@ export default class ScenesController {
     const requestData = await request.validate({
       schema: schema.create({
         name: schema.string([rules.trim()]),
-        scene: schema.object().anyMembers(),
+        scene: schema.object().members({
+          objects: schema.number(),
+        }),
       }),
     })
 

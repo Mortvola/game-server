@@ -1,6 +1,10 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
 
+export type SceneData = {
+  objects: number,
+}
+
 export default class Scene extends BaseModel {
   @column({ isPrimary: true })
   public id: number
@@ -14,6 +18,6 @@ export default class Scene extends BaseModel {
   @column()
   public name: string
 
-  @column({ prepare: (value: unknown) => JSON.stringify(value)})
-  public scene: unknown
+  @column({ prepare: (value: SceneData) => JSON.stringify(value)})
+  public scene: SceneData
 }

@@ -50,13 +50,13 @@ export default class ModelsController {
           return folder
         }
       }
+
+      throw new Error('model upload failed')
     } catch (error) {
       await trx.rollback()
       console.log(error)
       throw error
     }
-
-    throw new Error('upload failed')
   }
 
   public async getModel ({ params, response }: HttpContextContract) {

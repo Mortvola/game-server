@@ -45,6 +45,7 @@ export default class MaterialsController {
 
       return folder
     } catch (error) {
+      await trx.rollback()
       console.log(error)
       throw error
     }

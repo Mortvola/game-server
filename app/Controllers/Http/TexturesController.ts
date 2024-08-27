@@ -50,6 +50,8 @@ export default class TexturesController {
           return folder
         }
       }
+
+      throw new Error('texture upload failed')
     } catch (error) {
       await trx.rollback()
       console.log(error)
