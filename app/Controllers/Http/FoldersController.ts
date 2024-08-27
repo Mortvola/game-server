@@ -48,6 +48,14 @@ export default class FoldersController {
 
             await root.save()
           }
+        } else if (item.type === 'prefab') {
+          const prefab = await Prefab.findOrFail(item.itemId, { client: trx })
+
+          prefab.name = name
+          prefab.prefab.name = name
+          prefab.prefab.root.name = name
+
+          await prefab.save()
         }
       }
 

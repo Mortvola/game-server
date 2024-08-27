@@ -1,6 +1,19 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
 
+export type PrefabNodeData = {
+  id: number,
+  name: string,
+  components: unknown[],
+  nodes: PrefabNodeData[],
+}
+
+export type PrefabData = {
+  id: number,
+  name: string,
+  root: PrefabNodeData,
+}
+
 export default class Prefab extends BaseModel {
   @column({ isPrimary: true })
   public id: number
@@ -15,7 +28,7 @@ export default class Prefab extends BaseModel {
   public name: string
 
   @column({
-    prepare: (value: unknown) => JSON.stringify(value),
+    prepare: (value: PrefabData) => JSON.stringify(value),
   })
-  public prefab: unknown
+  public prefab: PrefabData
 }
