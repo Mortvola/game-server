@@ -5,12 +5,10 @@ export type PrefabNodeData = {
   id: number,
   name: string,
   components: unknown[],
-  nodes: PrefabNodeData[],
+  nodes: unknown[],
 }
 
 export type PrefabData = {
-  id: number,
-  name: string,
   root: PrefabNodeData,
 }
 
@@ -18,10 +16,10 @@ export default class Prefab extends BaseModel {
   @column({ isPrimary: true })
   public id: number
 
-  @column.dateTime({ autoCreate: true })
+  @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
   public updatedAt: DateTime
 
   @column()

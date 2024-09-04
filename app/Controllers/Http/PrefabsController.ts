@@ -15,7 +15,14 @@ export default class PrefabsController {
         schema: schema.create({
           parentId: schema.number.optional(),
           name: schema.string([rules.trim()]),
-          prefab: schema.object().anyMembers(),
+          prefab: schema.object().members({
+            root: schema.object().members({
+              id: schema.number(),
+              name: schema.string([rules.trim()]),
+              components: schema.array().anyMembers(),
+              nodes: schema.array().anyMembers(),
+            }),
+          }),
         }),
       })
 
@@ -36,7 +43,10 @@ export default class PrefabsController {
 
       await trx.commit()
 
-      return item
+      return ({
+        ...item.serialize(),
+        item: prefab,
+      })
     } catch (error) {
       await trx.rollback()
       console.log(error)

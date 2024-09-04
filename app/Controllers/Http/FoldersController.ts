@@ -52,7 +52,6 @@ export default class FoldersController {
           const prefab = await Prefab.findOrFail(item.itemId, { client: trx })
 
           prefab.name = name
-          prefab.prefab.name = name
           prefab.prefab.root.name = name
 
           await prefab.save()
