@@ -1,11 +1,7 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
 
-export type SceneData = {
-  tree: number,
-}
-
-export default class Scene extends BaseModel {
+export default class TreeNode extends BaseModel {
   @column({ isPrimary: true })
   public id: number
 
@@ -16,11 +12,11 @@ export default class Scene extends BaseModel {
   public updatedAt: DateTime
 
   @column()
-  public name: string
-
-  @column({ prepare: (value: SceneData) => JSON.stringify(value)})
-  public scene: SceneData
+  public parentNodeId: number | null
 
   @column()
-  public rootNodeId: number
+  public parentSubnodeId: number | null
+
+  @column()
+  public rootNodeId: number | null
 }

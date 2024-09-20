@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
 
-export default class Folder extends BaseModel {
+export default class Project extends BaseModel {
   @column({ isPrimary: true })
   public id: number
 
@@ -10,4 +10,10 @@ export default class Folder extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
   public updatedAt: DateTime
+
+  @column()
+  public name: string
+
+  @column()
+  public rootFolder: number
 }

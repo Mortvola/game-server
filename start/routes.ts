@@ -98,6 +98,13 @@ Route.group(() => {
     Route.get('/:id', 'ScenesController.getScene')
     Route.patch('/:id', 'ScenesController.updateScene')
   }).prefix('/scenes')
+
+  Route.group(() => {
+    Route.get('/:id', 'TreeNodesController.get')
+    Route.post('', 'TreeNodesController.post')
+    Route.post('/tree', 'TreeNodesController.postTree')
+    Route.delete('/:id', 'TreeNodesController.delete')
+  }).prefix('/tree-nodes')
 })
   .prefix('/api')
 

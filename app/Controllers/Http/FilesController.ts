@@ -26,7 +26,7 @@ export default class FilesController {
     try {
       const t = request.body()
 
-      const shader = await new ShaderDescriptor().useTransaction(trx)
+      const shader = new ShaderDescriptor().useTransaction(trx)
 
       shader.fill({
         name: t.name,

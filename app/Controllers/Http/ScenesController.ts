@@ -1,27 +1,43 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Scene, { SceneData } from 'App/Models/Scene'
+import Scene from 'App/Models/Scene'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
 import Database from '@ioc:Adonis/Lucid/Database'
 import FolderItem from 'App/Models/FolderItem'
+import TreeNode from 'App/Models/TreeNode'
+import GameObject, { ObjectType } from 'App/Models/GameObject'
 
 export default class ScenesController {
   public async uploadScene ({ request }: HttpContextContract) {
     const requestData = await request.validate({
       schema: schema.create({
         name: schema.string([rules.trim()]),
-        scene: schema.object().members({
-          objects: schema.number(),
-        }),
       }),
     })
 
     const trx = await Database.transaction()
 
     try {
-      const scene = await new Scene().useTransaction(trx)
+      const treeNode = await new TreeNode()
+        .useTransaction(trx)
+        .save()
+
+      await new GameObject()
+        .useTransaction(trx)
+        .fill({
+          name: 'root',
+          object: {
+            type: ObjectType.NodeObject,
+            components: [],
+          },
+          nodeId: treeNode.id,
+        })
+        .save()
+
+      const scene = await new Scene()
+        .useTransaction(trx)
         .fill({
           name: requestData.name,
-          scene: requestData.scene,
+          rootNodeId: treeNode.id,
         })
         .save()
 
@@ -35,22 +51,15 @@ export default class ScenesController {
         }
       }
 
-      const folder = new FolderItem().useTransaction(trx)
-
-      folder.fill({
-        name: scene.name,
-        itemId: scene.id,
-        parentId,
-        type: 'scene',
-      })
-
-      await folder.save()
+      const folderItem = await FolderItem.addFolderItem(scene.name, scene.id, 'scene', parentId, trx)
 
       await trx.commit()
 
-      return folder
+      return folderItem
     } catch(error) {
       await trx.rollback()
+      console.log(error)
+      throw error
     }
   }
 

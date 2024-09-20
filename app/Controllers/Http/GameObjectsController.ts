@@ -1,6 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
 import GameObject from 'App/Models/GameObject'
+import TreeNode from 'App/Models/TreeNode'
 
 export default class GameObjectsController {
   public async uploadGameObject ({ request }: HttpContextContract) {
@@ -14,6 +15,19 @@ export default class GameObjectsController {
         name: payload.name,
         object: payload.object,
       })
+
+      if (payload.parentNodeId !== undefined) {
+        const node = new TreeNode().useTransaction(trx)
+
+        node.fill({
+          parentNodeId: payload.parentNodeId,
+          parentSubnodeId: payload.parentSubnodeId,
+        })
+
+        await node.save()
+
+        object.nodeId = node.id
+      }
 
       await object.save()
 
