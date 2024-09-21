@@ -43,12 +43,21 @@ export default class TreeNodesController {
 
     try {
       const node = await TreeNode.findOrFail(payload.nodeId, { client: trx })
-      const nodeObject = await GameObject.findByOrFail('nodeId', node.id, { client: trx })
+
+      // Find the root game object to get the name for the folder item.
+      let root = node
+      while (root.rootNodeId !== null) {
+        root = await TreeNode.findOrFail(root.rootNodeId, { client: trx })
+      }
+      const nodeObject = await GameObject.query({client: trx })
+        .where('nodeId', root.id)
+        .andWhereNull('subnodeId')
+        .firstOrFail()
 
       const item = new FolderItem().useTransaction(trx)
 
       item.fill({
-        name: nodeObject.name,
+        name: nodeObject.name ? nodeObject.name : 'Unknown',
         itemId: payload.nodeId,
         parentId: payload.folderId,
         type: 'tree-node',

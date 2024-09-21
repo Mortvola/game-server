@@ -12,13 +12,14 @@ export type TreeNodeDescriptor = {
 export type NodesResponse = { root: TreeNodeDescriptor, objects: any[] }
 
 export const generateOverrideObjects = async (treeId: number, rootNodeId: number, trx: TransactionClientContract) => {
-  let stack: { node: TreeNode, subTreeId: number | undefined }[] = [{
+  type StackEntry = { node: TreeNode, subtrees: number[] }
+  let stack: StackEntry[] = [{
     node: await TreeNode.findOrFail(rootNodeId, { client: trx }),
-    subTreeId: undefined,
+    subtrees: [],
   }]
 
   while (stack.length > 0) {
-    const { node, subTreeId } = stack[0]
+    const { node, subtrees } = stack[0]
     stack = stack.slice(1)
 
     if (node.rootNodeId === null) {
@@ -41,11 +42,23 @@ export const generateOverrideObjects = async (treeId: number, rootNodeId: number
 
       const children = await TreeNode.query({ client: trx }).where('parentNodeId', node.id)
 
-      stack = stack.concat(children.map((child) => ({ node: child, subTreeId })))
+      stack = stack.concat(children.map((child) => ({ node: child, subtrees })))
+
+      // Look for any override connections at any of the current subtree levels.
+      for (let i = 0; i < subtrees.length; i += 1) {
+        const children = await TreeNode.query({ client: trx })
+          .where('parentNodeId', subtrees[i])
+          .where('parentSubnodeId', node.id)
+
+        stack = stack.concat(children.map((child) => ({
+          node: child,
+          subtrees: subtrees.slice(0, i),
+        })))
+      }
     } else {
       const root = await TreeNode.findOrFail(node.rootNodeId, { client: trx })
 
-      stack = stack.concat([{ node: root, subTreeId: node.id }])
+      stack = stack.concat([{ node: root, subtrees: [...subtrees, node.id] }])
     }
   }
 }
@@ -58,14 +71,14 @@ export const getTreeDescriptor = async (
     node: TreeNode,
     parent: TreeNodeDescriptor | undefined,
     treeId: number | undefined,
-    subtreeId: number | undefined,
+    subtrees: number[],
   }
 
   let stack: StackEntry[] = [{
     node: await TreeNode.findOrFail(rootNodeId, { client: trx }),
     parent: undefined,
     treeId: undefined,
-    subtreeId: undefined,
+    subtrees: [],
   }]
 
   let root: TreeNodeDescriptor | undefined
@@ -74,7 +87,7 @@ export const getTreeDescriptor = async (
 
   while (stack.length > 0) {
     const entry = stack[0]
-    const { node, parent, treeId, subtreeId } = entry
+    const { node, parent, treeId, subtrees } = entry
     stack = stack.slice(1)
 
     if (node.rootNodeId === null) {
@@ -117,11 +130,12 @@ export const getTreeDescriptor = async (
 
       let children = await TreeNode.query({ client: trx }).where('parentNodeId', node.id)
 
-      stack = stack.concat(children.map((child) => ({ node: child, parent: result, treeId, subtreeId })))
+      stack = stack.concat(children.map((child) => ({ node: child, parent: result, treeId, subtrees })))
 
-      if (subtreeId !== undefined) {
+      // Look for any override connections at any of the current subtree levels.
+      for (let i = 0; i < subtrees.length; i += 1) {
         children = await TreeNode.query({ client: trx })
-          .where('parentNodeId', subtreeId)
+          .where('parentNodeId', subtrees[i])
           .where('parentSubnodeId', node.id)
 
         // If the treeId matches the subtreeId then we must be leaving the tree of treeId and
@@ -129,14 +143,19 @@ export const getTreeDescriptor = async (
         stack = stack.concat(children.map((child) => ({
           node: child,
           parent: result,
-          treeId: treeId !== subtreeId ? treeId : undefined,
-          subtreeId: undefined,
+          treeId: treeId !== subtrees[i] ? treeId : undefined,
+          subtrees: subtrees.slice(0, i),
         })))
       }
     } else {
       const root = await TreeNode.findOrFail(node.rootNodeId, { client: trx })
 
-      stack = stack.concat([{ node: root, parent, treeId: treeId ?? node.id, subtreeId: node.id }])
+      stack = stack.concat([{
+        node: root,
+        parent,
+        treeId: treeId ?? node.id,
+        subtrees: [...subtrees, node.id],
+      }])
     }
   }
 
