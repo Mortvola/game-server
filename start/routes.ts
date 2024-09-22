@@ -28,7 +28,8 @@ Route.get('/', async ({ view }) => {
 
 Route.group(() => {
   Route.group(() => {
-    Route.get('/:id', 'ProjectsController.get')
+    Route.get('/:id?', 'ProjectsController.get')
+    Route.post('', 'ProjectsController.post')
   }).prefix('/projects')
 
   Route.group(() => {
