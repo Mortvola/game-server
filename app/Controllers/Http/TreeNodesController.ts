@@ -3,13 +3,28 @@ import Database from '@ioc:Adonis/Lucid/Database'
 import FolderItem from 'App/Models/FolderItem'
 import GameObject from 'App/Models/GameObject'
 import TreeNode from 'App/Models/TreeNode'
-import { createTree, getTreeDescriptor, NodesResponse, TreeNodeDescriptor } from 'App/Models/TreeUtils'
+import {
+  createTree, generateOverrideObjects2, getTreeDescriptor, NodesResponse, SceneObjectDescriptor, TreeNodeDescriptor,
+} from 'App/Models/TreeUtils'
 
 export type ItemResponse = { item: FolderItem, root?: TreeNodeDescriptor, objects?: any[] }
 
 export default class TreeNodesController {
   public async get ({ params }: HttpContextContract): Promise<NodesResponse | undefined> {
-    return getTreeDescriptor(params.id)
+    const trx = await Database.transaction()
+
+    try {
+      const descriptor = await getTreeDescriptor(params.id, trx)
+
+      // trx.commit()
+      trx.rollback()
+
+      return descriptor
+    } catch (error) {
+      trx.rollback()
+      console.log(error)
+      throw error
+    }
   }
 
   public async post ({ request }: HttpContextContract): Promise<NodesResponse | undefined> {
@@ -28,6 +43,44 @@ export default class TreeNodesController {
 
       if (treeDescriptor) {
         return treeDescriptor
+      }
+    } catch (error) {
+      await trx.rollback()
+      console.log(error)
+      throw error
+    }
+  }
+
+  public async patch ({ request, params }: HttpContextContract): Promise<unknown | undefined> {
+    const payload = request.body()
+
+    const trx = await Database.transaction()
+
+    try {
+      let objectDescriptors: SceneObjectDescriptor[] | undefined
+
+      if (payload.parentNodeId !== undefined) {
+        const node = await TreeNode.findOrFail(params.id, { client: trx })
+
+        // if (node.parentNodeId !== null && node.parentSubnodeId === payload.parentNodeId) {
+        //   objectDescriptors = await generateOverrideObjects2(params.id, trx)
+        // }
+
+        node.merge({
+          parentNodeId: payload.parentNodeId,
+          parentSubnodeId: payload.parentSubnodeId,
+        })
+
+        await node.save()
+
+        objectDescriptors = await generateOverrideObjects2(params.id, trx)
+      }
+
+      // await trx.commit()
+      await trx.rollback()
+
+      return {
+        objects: objectDescriptors,
       }
     } catch (error) {
       await trx.rollback()

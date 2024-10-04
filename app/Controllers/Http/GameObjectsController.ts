@@ -95,7 +95,16 @@ export default class GameObjectsController {
   }
 
   public async updateGameObject ({ request, params }: HttpContextContract) {
-    const object = await GameObject.findOrFail(params.id)
+    const query = GameObject.query()
+      .where('nodeId', params.nodeId)
+
+    if (params.treeId !== undefined) {
+      query.andWhere('treeId', params.treeId)
+    } else {
+      query.andWhereNull('treeId')
+    }
+
+    const object = await query.firstOrFail()
 
     object.merge(
       request.body(),
@@ -105,7 +114,16 @@ export default class GameObjectsController {
   }
 
   public async deleteGameObject ({ params }: HttpContextContract) {
-    const object = await GameObject.find(params.id)
+    const query = GameObject.query()
+      .where('nodeId', params.nodeId)
+
+    if (params.treeId !== undefined) {
+      query.andWhere('treeId', params.treeId)
+    } else {
+      query.andWhereNull('treeId')
+    }
+
+    const object = await query.firstOrFail()
 
     if (object) {
       await object.delete()
@@ -116,32 +134,33 @@ export default class GameObjectsController {
     const objects = await GameObject.all()
 
     for (let i = 0; i < objects.length; i += 1) {
-      const oldObject = objects[i].object as {
-        modelId: number,
-        materials: unknown,
-        items?: unknown[],
-        x?: number,
-        y?: number,
-        width?: number,
-        height?: number,
-      }
+      // const oldObject = objects[i].object as {
+      //   modelId: number,
+      //   materials: unknown,
+      //   items?: unknown[],
+      //   x?: number,
+      //   y?: number,
+      //   width?: number,
+      //   height?: number,
+      // }
 
-      if (oldObject.modelId !== undefined) {
-        const newObject: {
-          items: unknown[],
-        } = {
-          items: [],
-        }
+      // if (oldObject.modelId !== undefined) {
+      //   const newObject: {
+      //     items: unknown[],
+      //   } = {
+      //     items: [],
+      //   }
 
-        newObject.items.push({ item: { id: oldObject.modelId, materials: oldObject.materials }, type: 'model' })
+      //   newObject.items.push({ item: { id: oldObject.modelId, materials: oldObject.materials }, type: 'model' })
 
-        objects[i].object = newObject
-      } else if (oldObject.x !== undefined && oldObject.y !== undefined) {
-        objects[i].object = { ...oldObject }
-      } else if (oldObject.items === undefined) {
-        objects[i].object = { items: [] }
-      }
+      //   objects[i].object = newObject
+      // } else if (oldObject.x !== undefined && oldObject.y !== undefined) {
+      //   objects[i].object = { ...oldObject }
+      // } else if (oldObject.items === undefined) {
+      //   objects[i].object = { items: [] }
+      // }
     }
+
     return objects
   }
 }

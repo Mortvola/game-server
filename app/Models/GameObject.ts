@@ -9,13 +9,6 @@ export enum ObjectType {
   NodeObjectOverride = 'ObjectOverride',
 }
 
-export type SceneObjectDescriptor = {
-  id: number,
-  type: ObjectType,
-  components: unknown[];
-  transformProps?: unknown;
-}
-
 export type TreeNodeDescriptor = {
   id: number,
   type: ObjectType,
@@ -52,9 +45,6 @@ export type TransformPropsDescriptor = {
 }
 
 export default class GameObject extends BaseModel {
-  @column({ isPrimary: true })
-  public id: number
-
   @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime
 
@@ -73,8 +63,5 @@ export default class GameObject extends BaseModel {
   public nodeId: number
 
   @column()
-  public subnodeId: number | null
-
-  @column()
-  public baseObjectId: number | null
+  public treeId: number | null
 }

@@ -71,9 +71,9 @@ Route.group(() => {
 
   Route.group(() => {
     Route.post('', 'GameObjectsController.uploadGameObject')
-    Route.get('/:id', 'GameObjectsController.getGameObject')
-    Route.delete('/:id', 'GameObjectsController.deleteGameObject')
-    Route.patch('/:id', 'GameObjectsController.updateGameObject')
+    // Route.get('/:id', 'GameObjectsController.getGameObject')
+    Route.delete('/:nodeId/:treeId?', 'GameObjectsController.deleteGameObject')
+    Route.patch('/:nodeId/:treeId?', 'GameObjectsController.updateGameObject')
   }).prefix('/scene-objects')
 
   Route.get('/scene-objects-list', 'GameObjectsController.getGameObjectList')
@@ -105,6 +105,7 @@ Route.group(() => {
     Route.post('', 'TreeNodesController.post')
     Route.post('/tree', 'TreeNodesController.postTree')
     Route.delete('/:id', 'TreeNodesController.delete')
+    Route.patch('/:id', 'TreeNodesController.patch')
   }).prefix('/tree-nodes')
 })
   .prefix('/api')
