@@ -20,7 +20,11 @@ export type SceneObjectDescriptor = {
 
 export type NodesResponse = { root: TreeNodeDescriptor, objects: SceneObjectDescriptor[] }
 
-export const createOverrideObject = async (treeId: number, baseObject: GameObject, trx: TransactionClientContract) => {
+export const createOverrideObject = async (
+  treeId: number,
+  baseObject: GameObject,
+  trx: TransactionClientContract,
+) => {
   const overrideObject = new GameObject().useTransaction(trx)
 
   overrideObject.fill({
@@ -32,7 +36,7 @@ export const createOverrideObject = async (treeId: number, baseObject: GameObjec
     },
   })
 
-  await overrideObject.save()
+  // await overrideObject.save()
 
   console.log(`created override objectx for ${baseObject.nodeId} in tree ${treeId}`)
 
@@ -89,14 +93,7 @@ export const generateOverrideObjects2 = async (
         .andWhere('treeId', tree.id)
         .first()
 
-      if (object) {
-        // If the base object id does not match the current base
-        // object then update it.
-        // if (object.baseObjectId !== baseObject.id) {
-        //   object.baseObjectId = baseObject.id
-        //   await object.save()
-        // }
-      } else {
+      if (!object) {
         // An object does not exist so create one.
         object = await createOverrideObject(tree.id, baseObject, trx)
       }

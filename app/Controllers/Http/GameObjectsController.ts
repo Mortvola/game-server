@@ -117,9 +117,19 @@ export default class GameObjectsController {
         query.andWhereNull('treeId')
       }
 
-      const object = await query.firstOrFail()
+      let object = await query.first()
 
-      object.object = data
+      if (object) {
+        object.object = data
+      } else {
+        object = new GameObject()
+
+        object.fill({
+          nodeId: params.nodeId,
+          treeId: params.treeId,
+          object: data,
+        })
+      }
 
       await object.save()
     }

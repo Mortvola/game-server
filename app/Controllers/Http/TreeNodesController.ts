@@ -16,8 +16,7 @@ export default class TreeNodesController {
     try {
       const descriptor = await getTreeDescriptor(params.id, trx)
 
-      // trx.commit()
-      trx.rollback()
+      trx.commit()
 
       return descriptor
     } catch (error) {
@@ -75,11 +74,9 @@ export default class TreeNodesController {
         // }
 
         objectDescriptors = await generateOverrideObjects2(params.id, trx)
-
-        await trx.rollback()
-      } else {
-        await trx.commit()
       }
+
+      await trx.commit()
 
       return {
         objects: objectDescriptors,

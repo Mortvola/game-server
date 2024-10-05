@@ -72,7 +72,7 @@ Route.group(() => {
   Route.group(() => {
     Route.post('', 'GameObjectsController.uploadGameObject')
     Route.delete('/:nodeId/:treeId?', 'GameObjectsController.deleteGameObject')
-    Route.patch('/:nodeId/:treeId?', 'GameObjectsController.updateGameObject')
+    Route.put('/:nodeId/:treeId?', 'GameObjectsController.updateGameObject')
   }).prefix('/scene-objects')
 
   Route.get('/scene-objects-list', 'GameObjectsController.getGameObjectList')
