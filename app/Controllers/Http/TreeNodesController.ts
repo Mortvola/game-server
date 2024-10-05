@@ -57,27 +57,29 @@ export default class TreeNodesController {
     const trx = await Database.transaction()
 
     try {
+      const node = await TreeNode.findOrFail(params.id, { client: trx })
+
       let objectDescriptors: SceneObjectDescriptor[] | undefined
 
-      if (payload.parentNodeId !== undefined) {
-        const node = await TreeNode.findOrFail(params.id, { client: trx })
+      node.merge({
+        parentNodeId: payload.parentNodeId,
+        parentSubnodeId: payload.parentSubnodeId,
+        name: payload.name,
+      })
 
+      await node.save()
+
+      if (payload.parentNodeId !== undefined) {
         // if (node.parentNodeId !== null && node.parentSubnodeId === payload.parentNodeId) {
         //   objectDescriptors = await generateOverrideObjects2(params.id, trx)
         // }
 
-        node.merge({
-          parentNodeId: payload.parentNodeId,
-          parentSubnodeId: payload.parentSubnodeId,
-        })
-
-        await node.save()
-
         objectDescriptors = await generateOverrideObjects2(params.id, trx)
-      }
 
-      // await trx.commit()
-      await trx.rollback()
+        await trx.rollback()
+      } else {
+        await trx.commit()
+      }
 
       return {
         objects: objectDescriptors,
