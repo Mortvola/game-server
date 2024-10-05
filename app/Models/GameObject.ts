@@ -51,9 +51,6 @@ export default class GameObject extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
   public updatedAt: DateTime
 
-  @column()
-  public name: string
-
   @column({
     prepare: (value: unknown) => JSON.stringify(value),
   })

@@ -12,7 +12,6 @@ export default class GameObjectsController {
       const payload = request.body()
 
       object.fill({
-        name: payload.name,
         object: payload.object,
       })
 
@@ -20,6 +19,7 @@ export default class GameObjectsController {
         const node = new TreeNode().useTransaction(trx)
 
         node.fill({
+          name: payload.name,
           parentNodeId: payload.parentNodeId,
           parentSubnodeId: payload.parentSubnodeId,
         })

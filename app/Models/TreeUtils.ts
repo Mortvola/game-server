@@ -4,6 +4,7 @@ import GameObject from './GameObject'
 
 export type TreeNodeDescriptor = {
   id: number,
+  name?: string,
   treeId?: number,
   children: TreeNodeDescriptor[],
 }
@@ -11,8 +12,6 @@ export type TreeNodeDescriptor = {
 export type SceneObjectDescriptor = {
   nodeId: number,
   treeId?: number,
-
-  name: string,
 
   object: unknown,
 
@@ -25,14 +24,12 @@ export const createOverrideObject = async (treeId: number, baseObject: GameObjec
   const overrideObject = new GameObject().useTransaction(trx)
 
   overrideObject.fill({
-    name: '',
     nodeId: baseObject.nodeId,
     treeId: treeId,
     object: {
       type: 'object',
       components: [],
     },
-    // baseObjectId: baseObject.id,
   })
 
   await overrideObject.save()
@@ -111,7 +108,6 @@ export const generateOverrideObjects2 = async (
   return objects.map((entry) => ({
     nodeId: entry.object.nodeId,
     treeId: entry.object.treeId ?? undefined,
-    name: entry.object.name,
     object: entry.object.object,
     baseTreeId: entry.baseTreeId,
   }))
@@ -184,8 +180,9 @@ export const getTreeDescriptor = async (
     stack = stack.slice(1)
 
     if (node.rootNodeId === null) {
-      const result = {
+      const result: TreeNodeDescriptor = {
         id: node.id,
+        name: node.name ?? undefined,
         treeId: treeId,
         children: [],
       }
