@@ -12,7 +12,17 @@ export default class GameObjectsController {
       const payload = request.body()
 
       object.fill({
-        object: payload.object,
+        object: {
+          type: 'object',
+          components: payload.component
+            ? [{ id: 0, type: payload.component.type, props: payload.component.props }]
+            : [],
+          transformProps: {
+            translate: [0, 0, 0],
+            rotate: [0, 0, 0],
+            scale: [1, 1, 1],
+          },
+        },
       })
 
       if (payload.parentNodeId !== undefined) {
