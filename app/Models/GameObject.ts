@@ -45,6 +45,9 @@ export type TransformPropsDescriptor = {
 }
 
 export default class GameObject extends BaseModel {
+  @column({ isPrimary: true, serializeAs: null })
+  public id: number
+
   @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime
 

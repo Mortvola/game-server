@@ -19,12 +19,14 @@ export default class ScenesController {
     try {
       const treeNode = await new TreeNode()
         .useTransaction(trx)
+        .fill({
+          name: 'root',
+        })
         .save()
 
       await new GameObject()
         .useTransaction(trx)
         .fill({
-          name: 'root',
           object: {
             type: ObjectType.NodeObject,
             components: [],

@@ -95,22 +95,24 @@ export default class GameObjectsController {
   }
 
   public async updateGameObject ({ request, params }: HttpContextContract) {
-    const query = GameObject.query()
-      .where('nodeId', params.nodeId)
+    const data = request.body().object
 
-    if (params.treeId !== undefined) {
-      query.andWhere('treeId', params.treeId)
-    } else {
-      query.andWhereNull('treeId')
+    if (data) {
+      const query = GameObject.query()
+        .where('nodeId', params.nodeId)
+
+      if (params.treeId !== undefined) {
+        query.andWhere('treeId', params.treeId)
+      } else {
+        query.andWhereNull('treeId')
+      }
+
+      const object = await query.firstOrFail()
+
+      object.object = data
+
+      await object.save()
     }
-
-    const object = await query.firstOrFail()
-
-    object.merge(
-      request.body(),
-    )
-
-    await object.save()
   }
 
   public async deleteGameObject ({ params }: HttpContextContract) {
