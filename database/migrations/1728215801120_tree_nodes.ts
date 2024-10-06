@@ -1,25 +1,25 @@
 import BaseSchema from '@ioc:Adonis/Lucid/Schema'
 
 export default class extends BaseSchema {
-  protected tableName = 'game_objects'
+  protected tableName = 'tree_nodes'
 
   public async up () {
     this.schema.alterTable(this.tableName, (table) => {
-      table.integer('tree_id')
+      table.integer('parent_tree_id')
     })
 
     this.defer(async () => {
       const trx = await this.db.transaction()
 
       try {
-        const objects = await trx.from('game_objects')
-          .whereNotNull('subnode_id')
+        const nodes = await trx.from('tree_nodes')
+          .whereNotNull('parent_subnode_id')
 
-        await Promise.all(objects.map((object) => (
-          trx.from('game_objects')
-            .where('id', object.id)
-            .update('tree_id', object.node_id)
-            .update('node_id', object.subnode_id)
+        await Promise.all(nodes.map((node) => (
+          trx.from('tree_nodes')
+            .where('id', node.id)
+            .update('parent_tree_id', node.parent_node_id)
+            .update('parent_node_id', node.parent_subnode_id)
         )))
 
         await trx.commit()

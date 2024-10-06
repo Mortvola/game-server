@@ -47,7 +47,7 @@ export const getRoot = async (node: TreeNode, trx: TransactionClientContract) =>
   let root = node
 
   while (root) {
-    if (root.parentNodeId !== null && root.parentSubnodeId === null) {
+    if (root.parentNodeId !== null && root.parentTreeId === null) {
       root = await TreeNode.findOrFail(root.parentNodeId, { client: trx })
     } else {
       return root
@@ -133,8 +133,8 @@ export const generateOverrideObjects = async (treeId: number, rootNodeId: number
       // Look for any override connections at any of the current subtree levels.
       for (let i = 0; i < subtrees.length; i += 1) {
         const children = await TreeNode.query({ client: trx })
-          .where('parentNodeId', subtrees[i])
-          .where('parentSubnodeId', node.id)
+          .where('parentTreeId', subtrees[i])
+          .where('parentNodeId', node.id)
 
         stack = stack.concat(children.map((child) => ({
           node: child,
@@ -199,8 +199,8 @@ export const getTreeDescriptor = async (
       // Look for any override connections at any of the current subtree levels.
       for (let i = 0; i < subtrees.length; i += 1) {
         children = await TreeNode.query({ client: trx })
-          .where('parentNodeId', subtrees[i])
-          .where('parentSubnodeId', node.id)
+          .where('parentTreeId', subtrees[i])
+          .where('parentNodeId', node.id)
 
         // If the treeId matches the subtreeId then we must be leaving the tree of treeId and
         // it should be set to undefined.

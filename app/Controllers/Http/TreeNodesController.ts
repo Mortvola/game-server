@@ -62,14 +62,14 @@ export default class TreeNodesController {
 
       node.merge({
         parentNodeId: payload.parentNodeId,
-        parentSubnodeId: payload.parentSubnodeId,
+        parentTreeId: payload.parentTreeId,
         name: payload.name,
       })
 
       await node.save()
 
       if (payload.parentNodeId !== undefined) {
-        // if (node.parentNodeId !== null && node.parentSubnodeId === payload.parentNodeId) {
+        // if (node.parentTreeId !== null && node.parentNodeId === payload.parentNodeId) {
         //   objectDescriptors = await generateOverrideObjects2(params.id, trx)
         // }
 
