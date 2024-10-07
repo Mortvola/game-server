@@ -126,7 +126,9 @@ export const generateOverrideObjects = async (treeId: number, rootNodeId: number
 
       await createOverrideObject(treeId, object, trx)
 
-      const children = await TreeNode.query({ client: trx }).where('parentNodeId', node.id)
+      const children = await TreeNode.query({ client: trx })
+        .where('parentNodeId', node.id)
+        .andWhereNull('parentTreeId')
 
       stack = stack.concat(children.map((child) => ({ node: child, subtrees })))
 
@@ -192,7 +194,9 @@ export const getTreeDescriptor = async (
 
       objects.push(...await generateOverrideObjects2(node.id, trx))
 
-      let children = await TreeNode.query({ client: trx }).where('parentNodeId', node.id)
+      let children = await TreeNode.query({ client: trx })
+        .where('parentNodeId', node.id)
+        .andWhereNull('parentTreeId')
 
       stack = stack.concat(children.map((child) => ({ node: child, parent: result, treeId, subtrees })))
 
