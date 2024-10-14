@@ -10,7 +10,6 @@ import Database from '@ioc:Adonis/Lucid/Database'
 import Particle from 'App/Models/Particle'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
 import Prefab from 'App/Models/Prefab'
-import Scene from 'App/Models/Scene'
 
 export default class FoldersController {
   public async getFolder ({ params }: HttpContextContract) {
@@ -35,19 +34,19 @@ export default class FoldersController {
       if (name !== undefined) {
         // For scenes, update the name in the scene object and the scene object's json data.
         if (item.type === 'scene') {
-          const scene = await Scene.findOrFail(item.itemId, { client: trx })
+          // const scene = await Scene.findOrFail(item.itemId, { client: trx })
 
-          scene.name = name
+          // scene.name = name
 
-          await scene.save()
+          // await scene.save()
 
-          const root = await GameObject.find(scene.scene.objects, { client: trx })
+          // const root = await GameObject.find(scene.scene.objects, { client: trx })
 
-          if (root) {
-            root.name = name
+          // if (root) {
+          //   root.name = name
 
-            await root.save()
-          }
+          //   await root.save()
+          // }
         } else if (item.type === 'prefab') {
           const prefab = await Prefab.findOrFail(item.itemId, { client: trx })
 

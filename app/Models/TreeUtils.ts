@@ -15,10 +15,14 @@ export type SceneObjectDescriptor = {
 
   object: unknown,
 
-  baseTreeId?: number,
+  rootId?: number,
 }
 
-export type NodesResponse = { root: TreeNodeDescriptor, objects: SceneObjectDescriptor[] }
+export type NodesResponse = {
+  root: TreeNodeDescriptor,
+  objects: SceneObjectDescriptor[],
+  trees: { id: number, name: string }[],
+}
 
 export const createOverrideObject = async (
   treeId: number,
@@ -47,11 +51,11 @@ export const getRoot = async (node: TreeNode, trx: TransactionClientContract) =>
   let root = node
 
   while (root) {
-    if (root.parentNodeId !== null && root.parentTreeId === null) {
-      root = await TreeNode.findOrFail(root.parentNodeId, { client: trx })
-    } else {
+    if (root.parentNodeId === null) {
       return root
     }
+
+    root = await TreeNode.findOrFail(root.parentNodeId, { client: trx })
   }
 
   throw new Error('root not found')
@@ -70,15 +74,15 @@ export const generateOverrideObjects2 = async (
   type StackEntry = { node: TreeNode, baseObject: GameObject, baseTreeId: number | undefined }
   let stack: StackEntry[] = [{ node, baseObject, baseTreeId: undefined }]
 
-  const objects: { object: GameObject, baseTreeId: number | undefined}[] = []
+  const objects: { object: GameObject, rootId: number }[] = []
 
   while (stack.length > 0) {
-    const { node, baseObject, baseTreeId } = stack[0]
+    const { node, baseObject } = stack[0]
     stack = stack.slice(1)
 
-    objects.push({ object: baseObject, baseTreeId })
-
     const root = await getRoot(node, trx)
+
+    objects.push({ object: baseObject, rootId: root.id })
 
     // Found the root of the current tree. Determine if the root
     // is contained in another tree.
@@ -106,7 +110,7 @@ export const generateOverrideObjects2 = async (
     nodeId: entry.object.nodeId,
     treeId: entry.object.treeId ?? undefined,
     object: entry.object.object,
-    baseTreeId: entry.baseTreeId,
+    rootId: entry.rootId,
   }))
 }
 
@@ -157,13 +161,17 @@ export const getTreeDescriptor = async (
 ): Promise<NodesResponse | undefined> => {
   type StackEntry = {
     node: TreeNode,
+    name: string,
     parent: TreeNodeDescriptor | undefined,
     treeId: number | undefined,
-    subtrees: number[],
+    subtrees: TreeNode[],
   }
 
+  const start = await TreeNode.findOrFail(rootNodeId, { client: trx })
+
   let stack: StackEntry[] = [{
-    node: await TreeNode.findOrFail(rootNodeId, { client: trx }),
+    node: start,
+    name: start.name,
     parent: undefined,
     treeId: undefined,
     subtrees: [],
@@ -171,18 +179,19 @@ export const getTreeDescriptor = async (
 
   let root: TreeNodeDescriptor | undefined
 
-  const objects: SceneObjectDescriptor[] = []
+  const objects: Map<string, SceneObjectDescriptor> = new Map()
+  const trees: Map<number, string> = new Map()
 
   while (stack.length > 0) {
     const entry = stack[0]
-    const { node, parent, treeId, subtrees } = entry
+    const { node, name, parent, treeId, subtrees } = entry
     stack = stack.slice(1)
 
     if (node.rootNodeId === null) {
       const result: TreeNodeDescriptor = {
         id: node.id,
-        name: node.name ?? undefined,
-        treeId: treeId,
+        name,
+        treeId,
         children: [],
       }
 
@@ -192,45 +201,60 @@ export const getTreeDescriptor = async (
         parent.children.push(result)
       }
 
-      objects.push(...await generateOverrideObjects2(node.id, trx))
+      const objs = await generateOverrideObjects2(node.id, trx)
+
+      for (const o of objs) {
+        objects.set(`${o.nodeId}-${o.treeId}`, o)
+      }
 
       let children = await TreeNode.query({ client: trx })
         .where('parentNodeId', node.id)
         .andWhereNull('parentTreeId')
 
-      stack = stack.concat(children.map((child) => ({ node: child, parent: result, treeId, subtrees })))
+      stack = stack.concat(children.map((child) => ({
+        node: child,
+        name: child.name,
+        parent: result,
+        treeId,
+        subtrees,
+      })))
 
       // Look for any override connections at any of the current subtree levels.
       for (let i = 0; i < subtrees.length; i += 1) {
         children = await TreeNode.query({ client: trx })
-          .where('parentTreeId', subtrees[i])
+          .where('parentTreeId', subtrees[i].id)
           .where('parentNodeId', node.id)
 
         // If the treeId matches the subtreeId then we must be leaving the tree of treeId and
         // it should be set to undefined.
         stack = stack.concat(children.map((child) => ({
           node: child,
+          name: child.name,
           parent: result,
-          treeId: treeId !== subtrees[i] ? treeId : undefined,
+          treeId: treeId !== subtrees[i].id ? treeId : undefined,
           subtrees: subtrees.slice(0, i),
         })))
       }
     } else {
       const root = await TreeNode.findOrFail(node.rootNodeId, { client: trx })
 
-      stack = stack.concat([{
+      stack.push({
         node: root,
+        name: node.name, // Use the name of the node enclosing the root
         parent,
         treeId: treeId ?? node.id,
-        subtrees: [...subtrees, node.id],
-      }])
+        subtrees: [...subtrees, node],
+      })
+
+      trees.set(root.id, root.name)
     }
   }
 
   if (root) {
     return {
       root,
-      objects,
+      objects: Array.from(objects).map(([, o]) => o),
+      trees: Array.from(trees).map(([id, name]) => ({ id, name })),
     }
   }
 }
