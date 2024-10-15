@@ -1,6 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
-import FolderItem from 'App/Models/FolderItem'
+import FolderItem, { ItemType } from 'App/Models/FolderItem'
 import ShaderDescriptor from 'App/Models/ShaderDescriptor'
 
 export default class FilesController {
@@ -51,7 +51,7 @@ export default class FilesController {
         name: shader.name,
         itemId: shader.id,
         parentId,
-        type: 'shader',
+        type: ItemType.Shader,
       })
 
       await folder.save()

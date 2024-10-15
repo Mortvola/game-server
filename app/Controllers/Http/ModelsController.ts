@@ -1,7 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Model from 'App/Models/Model'
 import Drive from '@ioc:Adonis/Core/Drive'
-import FolderItem from 'App/Models/FolderItem'
+import FolderItem, { ItemType } from 'App/Models/FolderItem'
 import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class ModelsController {
@@ -40,7 +40,7 @@ export default class ModelsController {
             name: model.name,
             itemId: model.id,
             parentId,
-            type: 'model',
+            type: ItemType.Model,
           })
 
           await folder.save()

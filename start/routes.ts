@@ -78,13 +78,6 @@ Route.group(() => {
   Route.get('/scene-objects-list', 'GameObjectsController.getGameObjectList')
 
   Route.group(() => {
-    Route.post('', 'PrefabsController.post')
-    Route.get('/:id', 'PrefabsController.get')
-    Route.delete('/:id', 'PrefabsController.delete')
-    Route.patch('/:id', 'PrefabsController.patch')
-  }).prefix('/prefabs')
-
-  Route.group(() => {
     Route.get('', 'FoldersController.getFolder')
     Route.get('/:id', 'FoldersController.getFolder')
     Route.post('', 'FoldersController.makeFolder')

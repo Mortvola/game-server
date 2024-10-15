@@ -1,6 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
-import FolderItem from 'App/Models/FolderItem'
+import FolderItem, { ItemType } from 'App/Models/FolderItem'
 import Project from 'App/Models/Project'
 
 export default class ProjectsController {
@@ -29,7 +29,7 @@ export default class ProjectsController {
 
       folder.fill({
         name: 'Root',
-        type: 'folder',
+        type: ItemType.Folder,
       })
 
       await folder.save()

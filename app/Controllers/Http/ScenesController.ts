@@ -2,7 +2,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Scene from 'App/Models/Scene'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
 import Database from '@ioc:Adonis/Lucid/Database'
-import FolderItem from 'App/Models/FolderItem'
+import FolderItem, { ItemType } from 'App/Models/FolderItem'
 import TreeNode from 'App/Models/TreeNode'
 import GameObject, { ObjectType } from 'App/Models/GameObject'
 
@@ -53,7 +53,7 @@ export default class ScenesController {
         }
       }
 
-      const folderItem = await FolderItem.addFolderItem(scene.name, scene.id, 'scene', parentId, trx)
+      const folderItem = await FolderItem.addFolderItem(scene.name, scene.id, ItemType.Scene, parentId, trx)
 
       await trx.commit()
 
@@ -70,22 +70,18 @@ export default class ScenesController {
   }
 
   public async updateScene ({ request, params }: HttpContextContract) {
-    const particleSystem = await Scene.findOrFail(params.id)
+    const scene = await Scene.findOrFail(params.id)
 
     const requestData = await request.validate({
       schema: schema.create({
         name: schema.string([rules.trim()]),
-        scene: schema.object().members({
-          objects: schema.number(),
-        }),
       }),
     })
 
-    particleSystem.merge({
+    scene.merge({
       name: requestData.name,
-      scene: requestData.scene,
     })
 
-    await particleSystem.save()
+    await scene.save()
   }
 }

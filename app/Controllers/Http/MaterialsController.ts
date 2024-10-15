@@ -1,6 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
-import FolderItem from 'App/Models/FolderItem'
+import FolderItem, { ItemType } from 'App/Models/FolderItem'
 import Material from 'App/Models/Material'
 
 export default class MaterialsController {
@@ -36,7 +36,7 @@ export default class MaterialsController {
         name: material.name,
         itemId: material.id,
         parentId,
-        type: 'material',
+        type: ItemType.Material,
       })
 
       await folder.save()

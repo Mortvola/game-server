@@ -18,9 +18,6 @@ export default class Scene extends BaseModel {
   @column()
   public name: string
 
-  @column({ prepare: (value: SceneData) => JSON.stringify(value)})
-  public scene: SceneData
-
   @column()
   public rootNodeId: number
 }

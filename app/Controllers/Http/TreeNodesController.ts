@@ -1,6 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
-import FolderItem from 'App/Models/FolderItem'
+import FolderItem, { ItemType } from 'App/Models/FolderItem'
 import GameObject from 'App/Models/GameObject'
 import TreeNode from 'App/Models/TreeNode'
 import {
@@ -101,6 +101,7 @@ export default class TreeNodesController {
       while (root.rootNodeId !== null) {
         root = await TreeNode.findOrFail(root.rootNodeId, { client: trx })
       }
+
       const nodeObject = await GameObject.query({client: trx })
         .where('nodeId', root.id)
         .andWhereNull('subnodeId')
@@ -112,7 +113,7 @@ export default class TreeNodesController {
         name: node.name ? node.name : 'Unknown',
         itemId: payload.nodeId,
         parentId: payload.folderId,
-        type: 'tree-node',
+        type: ItemType.TreeNode,
       })
 
       await item.save()

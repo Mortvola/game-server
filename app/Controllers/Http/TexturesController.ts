@@ -2,7 +2,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Texture from 'App/Models/Texture'
 import Drive from '@ioc:Adonis/Core/Drive'
 import Database from '@ioc:Adonis/Lucid/Database'
-import FolderItem from 'App/Models/FolderItem'
+import FolderItem, { ItemType } from 'App/Models/FolderItem'
 
 export default class TexturesController {
   public async uploadTexture ({ request }: HttpContextContract) {
@@ -40,7 +40,7 @@ export default class TexturesController {
             name: model.name,
             itemId: model.id,
             parentId,
-            type: 'texture',
+            type: ItemType.Texture,
           })
 
           await folder.save()

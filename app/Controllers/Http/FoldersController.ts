@@ -1,19 +1,76 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import FolderItem from 'App/Models/FolderItem'
-import GameObject from 'App/Models/GameObject'
+import FolderItem, { ItemType } from 'App/Models/FolderItem'
 import Material from 'App/Models/Material'
 import Model from 'App/Models/Model'
 import ShaderDescriptor from 'App/Models/ShaderDescriptor'
 import Texture from 'App/Models/Texture'
 import Drive from '@ioc:Adonis/Core/Drive'
 import Database from '@ioc:Adonis/Lucid/Database'
-import Particle from 'App/Models/Particle'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
-import Prefab from 'App/Models/Prefab'
+import Scene from 'App/Models/Scene'
+import TreeNode from 'App/Models/TreeNode'
 
 export default class FoldersController {
   public async getFolder ({ params }: HttpContextContract) {
     const items = await FolderItem.query().where('parentId', params.id ?? null).orderBy('name')
+
+    for (const item of items) {
+      switch (item.type) {
+        case ItemType.Scene:
+          const scene = await Scene.find(item.itemId)
+
+          if (scene) {
+            item.name = scene.name
+          }
+
+          break
+
+        case ItemType.Shader:
+          const shader = await ShaderDescriptor.find(item.itemId)
+
+          if (shader) {
+            item.name = shader.name
+          }
+
+          break
+
+        case ItemType.Material:
+          const material = await Material.find(item.itemId)
+
+          if (material) {
+            item.name = material.name
+          }
+
+          break
+
+        case ItemType.Texture:
+          const texture = await Texture.find(item.itemId)
+
+          if (texture) {
+            item.name = texture.name
+          }
+
+          break
+
+        case ItemType.Model:
+          const model = await Model.find(item.itemId)
+
+          if (model) {
+            item.name = model.name
+          }
+
+          break
+
+        case ItemType.TreeNode:
+          const treeNode = await TreeNode.find(item.itemId)
+
+          if (treeNode) {
+            item.name = treeNode.name
+          }
+
+          break
+      }
+    }
 
     return items
   }
@@ -33,27 +90,65 @@ export default class FoldersController {
 
       if (name !== undefined) {
         // For scenes, update the name in the scene object and the scene object's json data.
-        if (item.type === 'scene') {
-          // const scene = await Scene.findOrFail(item.itemId, { client: trx })
+        switch (item.type) {
+          case ItemType.Scene:
+            const scene = await Scene.findOrFail(item.itemId, { client: trx })
 
-          // scene.name = name
+            scene.name = name
 
-          // await scene.save()
+            await scene.save()
 
-          // const root = await GameObject.find(scene.scene.objects, { client: trx })
+            break
 
-          // if (root) {
-          //   root.name = name
+          case ItemType.Shader: {
+            const shader = await ShaderDescriptor.findOrFail(item.itemId, { client: trx })
 
-          //   await root.save()
-          // }
-        } else if (item.type === 'prefab') {
-          const prefab = await Prefab.findOrFail(item.itemId, { client: trx })
+            shader.name = name
 
-          prefab.name = name
-          prefab.prefab.root.name = name
+            await shader.save()
 
-          await prefab.save()
+            break
+          }
+
+          case ItemType.Texture: {
+            const texture = await Texture.findOrFail(item.itemId, { client: trx })
+
+            texture.name = name
+
+            await texture.save()
+
+            break
+          }
+
+          case ItemType.Material: {
+            const material = await Material.findOrFail(item.itemId, { client: trx })
+
+            material.name = name
+
+            await material.save()
+
+            break
+          }
+
+          case ItemType.Model: {
+            const model = await Model.findOrFail(item.itemId, { client: trx })
+
+            model.name = name
+
+            await model.save()
+
+            break
+          }
+
+          case ItemType.TreeNode: {
+            const treeNode = await TreeNode.findOrFail(item.itemId, { client: trx })
+
+            treeNode.name = name
+
+            await treeNode.save()
+
+            break
+          }
         }
       }
 
@@ -79,23 +174,7 @@ export default class FoldersController {
         await item.delete()
 
         switch (item.type) {
-          case 'object':
-            const object = await GameObject.find(item.itemId, { client: trx })
-
-            if (object) {
-              await object.delete()
-            }
-            break
-
-          case 'prefab':
-            const prefab = await Prefab.find(item.itemId, { client: trx })
-
-            if (prefab) {
-              await prefab.delete()
-            }
-            break
-
-          case 'texture':
+          case ItemType.Texture:
             const texture = await Texture.find(item.itemId, { client: trx })
 
             if (texture) {
@@ -104,7 +183,7 @@ export default class FoldersController {
             }
             break
 
-          case 'material':
+          case ItemType.Material:
             const material = await Material.find(item.itemId, { client: trx })
 
             if (material) {
@@ -112,7 +191,7 @@ export default class FoldersController {
             }
             break
 
-          case 'shader':
+          case ItemType.Shader:
             const shader = await ShaderDescriptor.find(item.itemId, { client: trx })
 
             if (shader) {
@@ -120,20 +199,12 @@ export default class FoldersController {
             }
             break
 
-          case 'model':
+          case ItemType.Model:
             const model = await Model.find(item.itemId, { client: trx })
 
             if (model) {
               await Drive.delete(`models/${model.filename}`)
               await model.delete()
-            }
-            break
-
-          case 'particle':
-            const particle = await Particle.find(item.itemId, { client: trx })
-
-            if (particle) {
-              await particle.delete()
             }
             break
         }
@@ -156,7 +227,7 @@ export default class FoldersController {
       name: body.name,
       itemId: null,
       parentId: body.parentId,
-      type: 'folder',
+      type: ItemType.Folder,
     })
 
     await folder.save()
@@ -180,7 +251,7 @@ export default class FoldersController {
       name: requestData.name,
       itemId: requestData.itemId,
       parentId: requestData.parentId,
-      type: requestData.type,
+      type: requestData.type as ItemType,
     })
 
     await item.save()

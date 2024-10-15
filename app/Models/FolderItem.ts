@@ -2,6 +2,16 @@ import { DateTime } from 'luxon'
 import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
 import { TransactionClientContract } from '@ioc:Adonis/Lucid/Database'
 
+export enum ItemType {
+  Folder = 'folder',
+  Scene = 'scene',
+  Material = 'material',
+  Texture = 'texture',
+  Shader = 'shader',
+  Model = 'model',
+  TreeNode = 'tree-node',
+}
+
 export default class FolderItem extends BaseModel {
   @column({ isPrimary: true })
   public id: number
@@ -13,7 +23,7 @@ export default class FolderItem extends BaseModel {
   public updatedAt: DateTime
 
   @column()
-  public type: string
+  public type: ItemType
 
   @column()
   public name: string
@@ -27,7 +37,7 @@ export default class FolderItem extends BaseModel {
   public static async addFolderItem (
     name: string,
     itemId: number,
-    type: string,
+    type: ItemType,
     parentId: number | null,
     trx: TransactionClientContract,
   ) {
