@@ -260,16 +260,19 @@ export const getTreeDescriptor = async (
 }
 
 export const createTree = async (rootNodeId: number, parentNodeId: number, trx: TransactionClientContract) => {
-  const rootNode = new TreeNode().useTransaction(trx)
+  const rootNode = await TreeNode.findOrFail(rootNodeId)
 
-  rootNode.fill({
+  const treeNode = new TreeNode().useTransaction(trx)
+
+  treeNode.fill({
     parentNodeId,
     rootNodeId,
+    name: rootNode.name, // Use the name from the root node.
   })
 
-  await rootNode.save()
+  await treeNode.save()
 
-  await generateOverrideObjects(rootNode.id, rootNodeId, trx)
+  await generateOverrideObjects(treeNode.id, rootNodeId, trx)
 
-  return getTreeDescriptor(rootNode.id, trx)
+  return getTreeDescriptor(treeNode.id, trx)
 }
