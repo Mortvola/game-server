@@ -4,7 +4,8 @@ import FolderItem, { ItemType } from 'App/Models/FolderItem'
 import GameObject from 'App/Models/GameObject'
 import TreeNode from 'App/Models/TreeNode'
 import {
-  createTree, generateOverrideObjects2, getTreeDescriptor, NodesResponse, SceneObjectDescriptor, TreeNodeDescriptor,
+  createTree, cyclicCheck, generateOverrideObjects2,
+  getTreeDescriptor, NodesResponse, SceneObjectDescriptor, TreeNodeDescriptor,
 } from 'App/Models/TreeUtils'
 
 export type ItemResponse = { item: FolderItem, root?: TreeNodeDescriptor, objects?: any[] }
@@ -69,11 +70,17 @@ export default class TreeNodesController {
       await node.save()
 
       if (payload.parentNodeId !== undefined) {
+        if (await cyclicCheck(node, trx)) {
+          throw new Error('Cycle found in tree')
+        }
+      }
+
+      if (payload.parentNodeId !== undefined) {
         // if (node.parentTreeId !== null && node.parentNodeId === payload.parentNodeId) {
         //   objectDescriptors = await generateOverrideObjects2(params.id, trx)
         // }
 
-        objectDescriptors = await generateOverrideObjects2(params.id, trx)
+        // objectDescriptors = await generateOverrideObjects2(node.rootNodeId ?? node.id, trx)
       }
 
       await trx.commit()
