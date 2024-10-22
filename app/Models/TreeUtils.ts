@@ -7,6 +7,8 @@ export type TreeNodeDescriptor = {
   name?: string,
   wrapperId?: number,
   parentWrapperId?: number,
+  pathId?: number,
+  path?: number[],
   // connectionOverride?: boolean,
   children: TreeNodeDescriptor[],
 }
@@ -276,6 +278,8 @@ export const getTreeDescriptor = async (
         name: wrapper?.name ?? node.name,
         wrapperId: wrapper?.id,
         parentWrapperId: (wrapper !== undefined ? wrapper.parentWrapperId : node.parentWrapperId) ?? undefined,
+        pathId: node.pathId ?? undefined,
+        path: node.path ?? undefined,
         children: [],
       }
 
@@ -308,14 +312,26 @@ export const getTreeDescriptor = async (
           .where('parentNodeId', node.id)
           .where('parentWrapperId', subtrees[i].id)
 
-        // If the treeId matches the subtreeId then we must be leaving the tree of treeId and
-        // it should be set to undefined.
-        stack = stack.concat(children.map((child) => ({
-          node: child,
-          parent: result,
-          topLevelWrapperId,
-          subtrees,
-        })))
+        for (const child of children) {
+          // Only inlcude the node if the pathId matches
+          let pathId = 0
+          for (let p = subtrees.length - 1; p >= 0; p -= 1) {
+            if (subtrees[p].id === child.parentWrapperId) {
+              break
+            }
+
+            pathId ^= subtrees[p].id
+          }
+
+          if (child.pathId === pathId) {
+            stack.push({
+              node: child,
+              parent: result,
+              topLevelWrapperId,
+              subtrees,
+            })
+          }
+        }
       }
     } else {
       // This is a wrapper node.
@@ -343,19 +359,79 @@ export const getTreeDescriptor = async (
 }
 
 export const createTree = async (rootNodeId: number, parentNodeId: number, trx: TransactionClientContract) => {
-  const rootNode = await TreeNode.findOrFail(rootNodeId)
+  const rootNode = await TreeNode.findOrFail(rootNodeId, { client: trx })
 
-  const treeNode = new TreeNode().useTransaction(trx)
+  let root: TreeNode | undefined
+  let stack: { node: TreeNode, parentNodeId?: number }[] = [{ node: rootNode, parentNodeId }]
 
-  treeNode.fill({
-    parentNodeId,
-    rootNodeId,
-    name: rootNode.name, // Use the name from the root node.
-  })
+  while (stack.length > 0) {
+    const { node, parentNodeId } = stack[0]
+    stack = stack.slice(1)
 
-  await treeNode.save()
+    const parent = node
 
-  // await generateOverrideObjects(treeNode.id, rootNodeId, trx)
+    if (root === undefined) {
+      const treeNode = new TreeNode().useTransaction(trx)
 
-  return getTreeDescriptor(treeNode.id, trx)
+      treeNode.fill({
+        parentNodeId,
+        rootNodeId,
+        name: rootNode.name, // Use the name from the root node.
+      })
+
+      await treeNode.save()
+
+      root = treeNode
+    }
+
+    const children = await TreeNode.query().where('parentNodeId', node.id)
+    stack.push(...children.map((child) => ({ node: child, parentNodeId: parent.id })))
+  }
+
+  if (root) {
+    return getTreeDescriptor(root.id, trx)
+  }
+}
+
+export const getPathId = async (startId: number, wrapperId: number, trx: TransactionClientContract) => {
+  // let id = 0
+  // const path: number[] = []
+
+  type StackEntry = {
+    nodeId: number,
+    id: number,
+    path: number[]
+  }
+
+  let stack: StackEntry[] = [{ nodeId: startId, id: 0, path: [] }]
+
+  while (stack.length > 0) {
+    let { nodeId, id, path } = stack[0]
+    stack = stack.slice(1)
+
+    const node = await TreeNode.findOrFail(nodeId, { client: trx })
+
+    if (node.rootNodeId !== null) {
+      if (node.id === wrapperId) {
+        return { id, path }
+      }
+
+      if (node.parentNodeId !== null) {
+        stack.push({ nodeId: node.parentNodeId, id: id ^ node.id, path: [...path, node.id] })
+      }
+    } else if (node.parentNodeId !== null) {
+      stack.push({ nodeId: node.parentNodeId, id, path })
+    } else {
+      const wrappers = await TreeNode.query({ client: trx })
+        .where('rootNodeId', node.id)
+
+      stack.push(...wrappers.map((wrapper) => ({
+        nodeId: wrapper.id,
+        id,
+        path,
+      })))
+    }
+  }
+
+  return { id: 0, path: [] }
 }

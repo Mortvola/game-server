@@ -61,7 +61,11 @@ export default class TreeNodesController {
 
       let objectDescriptors: SceneObjectDescriptor[] | undefined
 
+      // let parentChanged = false
+
       if (payload.parentNodeId !== undefined) {
+        // parentChanged = payload.parentNodeId !== node.parentNodeId
+
         node.parentNodeId = payload.parentNodeId
       }
 
@@ -72,6 +76,17 @@ export default class TreeNodesController {
       if (payload.name !== undefined) {
         node.name = payload.name
       }
+
+      if (payload.path !== undefined) {
+        node.path = payload.path
+      }
+
+      if (payload.pathId !== undefined) {
+        node.pathId = payload.pathId
+      }
+
+      // Object.keys(obj).forEach((key) => obj[key] === undefined && delete obj[key]);
+
       // node.merge({
       //   parentNodeId: payload.parentNodeId,
       //   parentWrapperId: payload.parentWrapperId,
@@ -85,6 +100,55 @@ export default class TreeNodesController {
           throw new Error('Cycle found in tree')
         }
       }
+
+      // if (parentChanged && node.parentNodeId !== null) {
+      //   // Find all wrappers above this parental change
+      //   const wrappers: TreeNode[] = []
+
+      //   let stack: number[] = [node.parentNodeId]
+
+      //   while (stack.length > 0) {
+      //     const nodeId = stack[0]
+      //     stack = stack.slice(1)
+
+      //     let n = await TreeNode.findOrFail(nodeId, { client: trx })
+
+      //     if (n.rootNodeId !== null) {
+      //       wrappers.push(n)
+      //     }
+
+      //     if (n.parentNodeId === null) {
+      //       // Find a wrapper node that contains this node
+      //       const wrappers = await TreeNode.query({ client: trx })
+      //         .where('rootNodeId', nodeId)
+
+      //       stack.push(...wrappers.map((w) => w.id))
+      //     } else {
+      //       stack.push(n.parentNodeId)
+      //     }
+      //   }
+
+      //   for (const wrapper of wrappers) {
+      //     const addedNodes = await TreeNode.query({ client: trx })
+      //       .where('parentWrapperId', wrapper.id)
+
+      //     // Compute path IDs
+      //     for (const addedNode of addedNodes) {
+      //       if (addedNode.parentNodeId === null) {
+      //         throw new Error('parent node is null')
+      //       }
+
+      //       const { id, path } = await getPathId(addedNode.parentNodeId, wrapper.id, trx)
+
+      //       if (id !== addedNode.pathId) {
+      //         addedNode.pathId = id
+      //         addedNode.path = path
+
+      //         await addedNode.save()
+      //       }
+      //     }
+      //   }
+      // }
 
       if (payload.parentNodeId !== undefined) {
         // if (node.parentWrapperId !== null && node.parentNodeId === payload.parentNodeId) {

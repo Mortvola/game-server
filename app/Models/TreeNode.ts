@@ -22,4 +22,12 @@ export default class TreeNode extends BaseModel {
 
   @column()
   public rootNodeId: number | null
+
+  @column()
+  public pathId: number | null
+
+  @column({
+    prepare: (value: number[]) => JSON.stringify(value),
+  })
+  public path: number[] | null
 }
