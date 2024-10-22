@@ -5,17 +5,17 @@ import GameObject from 'App/Models/GameObject'
 import TreeNode from 'App/Models/TreeNode'
 import {
   createTree, cyclicCheck,
-  getTreeDescriptor, NodesResponse, SceneObjectDescriptor, TreeNodeDescriptor,
+  getTreeDescriptor, getTreeDescriptor2, NodesResponse, NodesResponse2, SceneObjectDescriptor, TreeNodeDescriptor,
 } from 'App/Models/TreeUtils'
 
 export type ItemResponse = { item: FolderItem, root?: TreeNodeDescriptor, objects?: any[] }
 
 export default class TreeNodesController {
-  public async get ({ params }: HttpContextContract): Promise<NodesResponse | undefined> {
+  public async get ({ params }: HttpContextContract): Promise<NodesResponse2 | undefined> {
     const trx = await Database.transaction()
 
     try {
-      const descriptor = await getTreeDescriptor(params.id, trx)
+      const descriptor = await getTreeDescriptor2(parseInt(params.id, 10), trx)
 
       trx.commit()
 

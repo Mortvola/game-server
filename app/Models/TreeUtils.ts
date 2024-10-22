@@ -18,14 +18,30 @@ export type SceneObjectDescriptor = {
   treeId?: number,
 
   object: unknown,
-
-  rootId?: number,
 }
 
 export type NodesResponse = {
   root: TreeNodeDescriptor,
   objects: SceneObjectDescriptor[],
   trees: { id: number, name: string }[],
+}
+
+type TreeNodeDescriptor2 = {
+  id: number,
+  name: string,
+  parentNodeId?: number,
+  rootNodeId?: number,
+  parentWrapperId?: number,
+  path?: number[],
+  pathId?: number,
+  children?: number[],
+  addedNodes?: number[],
+}
+
+export type NodesResponse2 = {
+  rootNodeId: number,
+  nodes: TreeNodeDescriptor2[],
+  objects: GameObject[],
 }
 
 export const createOverrideObject = async (
@@ -354,6 +370,77 @@ export const getTreeDescriptor = async (
       root,
       objects: Array.from(objects).map(([, o]) => o),
       trees: Array.from(trees).map(([id, name]) => ({ id, name })),
+    }
+  }
+}
+
+export const getTreeDescriptor2 = async (
+  rootNodeId: number,
+  trx: TransactionClientContract
+): Promise<NodesResponse2 | undefined> => {
+  type StackEntry = TreeNode
+
+  const start = await TreeNode.findOrFail(rootNodeId, { client: trx })
+
+  let stack: StackEntry[] = [start]
+
+  const nodes: Map<number, { node: TreeNode, children?: number[]; addedNodes?: number[] }> = new Map()
+  const objects: Map<number, GameObject[]> = new Map()
+
+  while (stack.length > 0) {
+    const node = stack[0]
+    stack = stack.slice(1)
+
+    let children: TreeNode[] | undefined
+    let addedNodes: TreeNode[] | undefined
+
+    if (node.rootNodeId === null) {
+      children = await TreeNode.query({ client: trx })
+        .where('parentNodeId', node.id)
+        .andWhereNull('parentWrapperId')
+
+      stack.push(...children)
+    } else {
+      // This is a wrapper node.
+      const root = await TreeNode.findOrFail(node.rootNodeId, { client: trx })
+
+      stack.push(root)
+
+      addedNodes = await TreeNode.query({ client: trx })
+        .andWhere('parentWrapperId', node.id)
+
+      stack.push(...addedNodes)
+    }
+
+    if (!nodes.has(node.id)) {
+      nodes.set(node.id, {
+        node,
+        children: children?.map((child) => child.id),
+        addedNodes: addedNodes?.map((addedNode) => addedNode.id),
+      })
+
+      const nodeObjects = await GameObject.query({ client: trx})
+        .where('nodeId', node.id)
+
+      objects.set(node.id, nodeObjects)
+    }
+  }
+
+  if (nodes) {
+    return {
+      rootNodeId,
+      nodes: Array.from(nodes.values()).map((node) => ({
+        id: node.node.id,
+        name: node.node.name,
+        parentNodeId: node.node.parentNodeId ?? undefined,
+        rootNodeId: node.node.rootNodeId ?? undefined,
+        parentWrapperId: node.node.parentWrapperId ?? undefined,
+        path: node.node.path ?? undefined,
+        pathId: node.node.pathId ?? undefined,
+        children: node.children,
+        addedNodes: node.addedNodes,
+      })),
+      objects: Array.from(objects.values()).flatMap((obj) => obj),
     }
   }
 }
