@@ -26,16 +26,20 @@ export type NodesResponse = {
   trees: { id: number, name: string }[],
 }
 
+type AddedNode = {
+  nodeId: number,
+  parentNodeId: number,
+  pathId: number
+}
+
 type TreeNodeDescriptor2 = {
   id: number,
   name: string,
   parentNodeId?: number,
   rootNodeId?: number,
   parentWrapperId?: number,
-  path?: number[],
-  pathId?: number,
   children?: number[],
-  addedNodes?: number[],
+  addedNodes?: AddedNode[],
 }
 
 export type NodesResponse2 = {
@@ -384,7 +388,7 @@ export const getTreeDescriptor2 = async (
 
   let stack: StackEntry[] = [start]
 
-  const nodes: Map<number, { node: TreeNode, children?: number[]; addedNodes?: number[] }> = new Map()
+  const nodes: Map<number, { node: TreeNode, children?: number[]; addedNodes?: AddedNode[] }> = new Map()
   const objects: Map<number, GameObject[]> = new Map()
 
   while (stack.length > 0) {
@@ -416,7 +420,11 @@ export const getTreeDescriptor2 = async (
       nodes.set(node.id, {
         node,
         children: children?.map((child) => child.id),
-        addedNodes: addedNodes?.map((addedNode) => addedNode.id),
+        addedNodes: addedNodes?.map((addedNode) => ({
+          nodeId: addedNode.id,
+          parentNodeId: addedNode.parentNodeId ?? 0,
+          pathId: addedNode.pathId ?? 0,
+        })),
       })
 
       const nodeObjects = await GameObject.query({ client: trx})
@@ -426,22 +434,18 @@ export const getTreeDescriptor2 = async (
     }
   }
 
-  if (nodes) {
-    return {
-      rootNodeId,
-      nodes: Array.from(nodes.values()).map((node) => ({
-        id: node.node.id,
-        name: node.node.name,
-        parentNodeId: node.node.parentNodeId ?? undefined,
-        rootNodeId: node.node.rootNodeId ?? undefined,
-        parentWrapperId: node.node.parentWrapperId ?? undefined,
-        path: node.node.path ?? undefined,
-        pathId: node.node.pathId ?? undefined,
-        children: node.children,
-        addedNodes: node.addedNodes,
-      })),
-      objects: Array.from(objects.values()).flatMap((obj) => obj),
-    }
+  return {
+    rootNodeId,
+    nodes: Array.from(nodes.values()).map((node) => ({
+      id: node.node.id,
+      name: node.node.name,
+      parentNodeId: node.node.parentNodeId ?? undefined,
+      rootNodeId: node.node.rootNodeId ?? undefined,
+      parentWrapperId: node.node.parentWrapperId ?? undefined,
+      children: node.children,
+      addedNodes: node.addedNodes,
+    })),
+    objects: Array.from(objects.values()).flatMap((obj) => obj),
   }
 }
 
