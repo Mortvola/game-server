@@ -32,7 +32,7 @@ type AddedNode = {
   pathId: number
 }
 
-type TreeNodeDescriptor2 = {
+export type TreeNodeDescriptor2 = {
   id: number,
   name: string,
   parentNodeId?: number,
@@ -263,125 +263,125 @@ export const generateOverrideObjects2 = async (
 //   }
 // }
 
+// export const getTreeDescriptor = async (
+//   rootNodeId: number,
+//   trx: TransactionClientContract
+// ): Promise<NodesResponse | undefined> => {
+//   type StackEntry = {
+//     node: TreeNode,
+//     parent?: TreeNodeDescriptor,
+//     topLevelWrapperId?: number,
+//     subtrees: TreeNode[],
+//     wrapper?: TreeNode,
+//   }
+
+//   const start = await TreeNode.findOrFail(rootNodeId, { client: trx })
+
+//   let stack: StackEntry[] = [{
+//     node: start,
+//     subtrees: [],
+//   }]
+
+//   let root: TreeNodeDescriptor | undefined
+
+//   const objects: Map<string, SceneObjectDescriptor> = new Map()
+//   const trees: Map<number, string> = new Map()
+
+//   while (stack.length > 0) {
+//     const entry = stack[0]
+//     const { node, parent, topLevelWrapperId, wrapper, subtrees } = entry
+//     stack = stack.slice(1)
+
+//     if (node.rootNodeId === null) {
+//       const result: TreeNodeDescriptor = {
+//         id: node.id,
+//         name: wrapper?.name ?? node.name,
+//         wrapperId: wrapper?.id,
+//         modifierNodeId: (wrapper !== undefined ? wrapper.modifierNodeId : node.modifierNodeId) ?? undefined,
+//         pathId: node.pathId ?? undefined,
+//         path: node.path ?? undefined,
+//         children: [],
+//       }
+
+//       if (parent === undefined) {
+//         root = result
+//       } else {
+//         parent.children.push(result)
+//       }
+
+//       const objs = await generateOverrideObjects2(node.id, topLevelWrapperId, trx)
+
+//       for (const o of objs) {
+//         objects.set(`${o.nodeId}-${o.treeId}`, o)
+//       }
+
+//       let children = await TreeNode.query({ client: trx })
+//         .where('parentNodeId', node.id)
+//         .andWhereNull('modifierNodeId')
+
+//       stack = stack.concat(children.map((child) => ({
+//         node: child,
+//         parent: result,
+//         topLevelWrapperId,
+//         subtrees,
+//       })))
+
+//       // Look for any override connections at any of the current subtree levels.
+//       for (let i = 0; i < subtrees.length; i += 1) {
+//         children = await TreeNode.query({ client: trx })
+//           .where('parentNodeId', node.id)
+//           .where('modifierNodeId', subtrees[i].id)
+
+//         for (const child of children) {
+//           // Only inlcude the node if the pathId matches
+//           let pathId = 0
+//           for (let p = subtrees.length - 1; p >= 0; p -= 1) {
+//             if (subtrees[p].id === child.modifierNodeId) {
+//               break
+//             }
+
+//             pathId ^= subtrees[p].id
+//           }
+
+//           if (child.pathId === pathId) {
+//             stack.push({
+//               node: child,
+//               parent: result,
+//               topLevelWrapperId,
+//               subtrees,
+//             })
+//           }
+//         }
+//       }
+//     } else {
+//       // This is a wrapper node.
+//       const root = await TreeNode.findOrFail(node.rootNodeId, { client: trx })
+
+//       stack.push({
+//         node: root,
+//         parent,
+//         topLevelWrapperId: topLevelWrapperId ?? node.id,
+//         subtrees: [...subtrees, node],
+//         wrapper: node,
+//       })
+
+//       trees.set(root.id, root.name)
+//     }
+//   }
+
+//   if (root) {
+//     return {
+//       root,
+//       objects: Array.from(objects).map(([, o]) => o),
+//       trees: Array.from(trees).map(([id, name]) => ({ id, name })),
+//     }
+//   }
+// }
+
 export const getTreeDescriptor = async (
   rootNodeId: number,
   trx: TransactionClientContract
-): Promise<NodesResponse | undefined> => {
-  type StackEntry = {
-    node: TreeNode,
-    parent?: TreeNodeDescriptor,
-    topLevelWrapperId?: number,
-    subtrees: TreeNode[],
-    wrapper?: TreeNode,
-  }
-
-  const start = await TreeNode.findOrFail(rootNodeId, { client: trx })
-
-  let stack: StackEntry[] = [{
-    node: start,
-    subtrees: [],
-  }]
-
-  let root: TreeNodeDescriptor | undefined
-
-  const objects: Map<string, SceneObjectDescriptor> = new Map()
-  const trees: Map<number, string> = new Map()
-
-  while (stack.length > 0) {
-    const entry = stack[0]
-    const { node, parent, topLevelWrapperId, wrapper, subtrees } = entry
-    stack = stack.slice(1)
-
-    if (node.rootNodeId === null) {
-      const result: TreeNodeDescriptor = {
-        id: node.id,
-        name: wrapper?.name ?? node.name,
-        wrapperId: wrapper?.id,
-        modifierNodeId: (wrapper !== undefined ? wrapper.modifierNodeId : node.modifierNodeId) ?? undefined,
-        pathId: node.pathId ?? undefined,
-        path: node.path ?? undefined,
-        children: [],
-      }
-
-      if (parent === undefined) {
-        root = result
-      } else {
-        parent.children.push(result)
-      }
-
-      const objs = await generateOverrideObjects2(node.id, topLevelWrapperId, trx)
-
-      for (const o of objs) {
-        objects.set(`${o.nodeId}-${o.treeId}`, o)
-      }
-
-      let children = await TreeNode.query({ client: trx })
-        .where('parentNodeId', node.id)
-        .andWhereNull('modifierNodeId')
-
-      stack = stack.concat(children.map((child) => ({
-        node: child,
-        parent: result,
-        topLevelWrapperId,
-        subtrees,
-      })))
-
-      // Look for any override connections at any of the current subtree levels.
-      for (let i = 0; i < subtrees.length; i += 1) {
-        children = await TreeNode.query({ client: trx })
-          .where('parentNodeId', node.id)
-          .where('modifierNodeId', subtrees[i].id)
-
-        for (const child of children) {
-          // Only inlcude the node if the pathId matches
-          let pathId = 0
-          for (let p = subtrees.length - 1; p >= 0; p -= 1) {
-            if (subtrees[p].id === child.modifierNodeId) {
-              break
-            }
-
-            pathId ^= subtrees[p].id
-          }
-
-          if (child.pathId === pathId) {
-            stack.push({
-              node: child,
-              parent: result,
-              topLevelWrapperId,
-              subtrees,
-            })
-          }
-        }
-      }
-    } else {
-      // This is a wrapper node.
-      const root = await TreeNode.findOrFail(node.rootNodeId, { client: trx })
-
-      stack.push({
-        node: root,
-        parent,
-        topLevelWrapperId: topLevelWrapperId ?? node.id,
-        subtrees: [...subtrees, node],
-        wrapper: node,
-      })
-
-      trees.set(root.id, root.name)
-    }
-  }
-
-  if (root) {
-    return {
-      root,
-      objects: Array.from(objects).map(([, o]) => o),
-      trees: Array.from(trees).map(([id, name]) => ({ id, name })),
-    }
-  }
-}
-
-export const getTreeDescriptor2 = async (
-  rootNodeId: number,
-  trx: TransactionClientContract
-): Promise<NodesResponse2 | undefined> => {
+): Promise<NodesResponse2> => {
   type StackEntry = TreeNode
 
   const start = await TreeNode.findOrFail(rootNodeId, { client: trx })
@@ -451,7 +451,7 @@ export const getTreeDescriptor2 = async (
 
 export const createTree = async (
   rootNodeId: number,
-  parentNodeId: number,
+  parentNodeId: number | null,
   modifierNodeId: number | undefined,
   path: number[] | undefined,
   pathId: number | undefined,
@@ -459,39 +459,20 @@ export const createTree = async (
 ) => {
   const rootNode = await TreeNode.findOrFail(rootNodeId, { client: trx })
 
-  let root: TreeNode | undefined
-  let stack: { node: TreeNode, parentNodeId?: number }[] = [{ node: rootNode, parentNodeId }]
+  const root = new TreeNode()
+    .useTransaction(trx)
+    .fill({
+      parentNodeId,
+      name: rootNode.name, // Use the name from the root node.
+      rootNodeId,
+      modifierNodeId,
+      path,
+      pathId,
+    })
 
-  while (stack.length > 0) {
-    const { node, parentNodeId } = stack[0]
-    stack = stack.slice(1)
+  await root.save()
 
-    const parent = node
-
-    if (root === undefined) {
-      const treeNode = new TreeNode().useTransaction(trx)
-
-      treeNode.fill({
-        parentNodeId,
-        name: rootNode.name, // Use the name from the root node.
-        rootNodeId,
-        modifierNodeId,
-        path,
-        pathId,
-      })
-
-      await treeNode.save()
-
-      root = treeNode
-    }
-
-    const children = await TreeNode.query().where('parentNodeId', node.id)
-    stack.push(...children.map((child) => ({ node: child, parentNodeId: parent.id })))
-  }
-
-  if (root) {
-    return getTreeDescriptor2(root.id, trx)
-  }
+  return getTreeDescriptor(root.id, trx)
 }
 
 // export const getPathId = async (startId: number, wrapperId: number, trx: TransactionClientContract) => {

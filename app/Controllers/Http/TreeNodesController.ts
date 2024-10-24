@@ -5,17 +5,19 @@ import GameObject from 'App/Models/GameObject'
 import TreeNode from 'App/Models/TreeNode'
 import {
   createTree, cyclicCheck,
-  getTreeDescriptor2, NodesResponse, NodesResponse2, SceneObjectDescriptor, TreeNodeDescriptor,
+  getTreeDescriptor, NodesResponse2, SceneObjectDescriptor,
 } from 'App/Models/TreeUtils'
 
-export type ItemResponse = { item: FolderItem, root?: TreeNodeDescriptor, objects?: any[] }
+export type ItemResponse = {
+  item: FolderItem,
+} & NodesResponse2
 
 export default class TreeNodesController {
   public async get ({ params }: HttpContextContract): Promise<NodesResponse2 | undefined> {
     const trx = await Database.transaction()
 
     try {
-      const descriptor = await getTreeDescriptor2(parseInt(params.id, 10), trx)
+      const descriptor = await getTreeDescriptor(parseInt(params.id, 10), trx)
 
       trx.commit()
 
@@ -184,10 +186,10 @@ export default class TreeNodesController {
       const node = await TreeNode.findOrFail(payload.nodeId, { client: trx })
 
       // Find the root game object to get the name for the folder item.
-      let root = node
-      while (root.rootNodeId !== null) {
-        root = await TreeNode.findOrFail(root.rootNodeId, { client: trx })
-      }
+      // let root = node
+      // while (root.rootNodeId !== null) {
+      //   root = await TreeNode.findOrFail(root.rootNodeId, { client: trx })
+      // }
 
       const item = new FolderItem().useTransaction(trx)
 
@@ -200,21 +202,19 @@ export default class TreeNodesController {
 
       await item.save()
 
-      let nodesResponse: NodesResponse2 | undefined
+      // if (node.parentNodeId) {
+      const nodesResponse = await createTree(
+        node.id,
+        node.parentNodeId,
+        payload.modifierNodeId,
+        payload.path,
+        payload.pathId,
+        trx,
+      )
 
-      if (node.parentNodeId) {
-        nodesResponse = await createTree(
-          node.id,
-          node.parentNodeId,
-          undefined,
-          undefined,
-          undefined,
-          trx,
-        )
-
-        node.parentNodeId = null
-        await node.save()
-      }
+      node.parentNodeId = null
+      await node.save()
+      // }
 
       await trx.commit()
 
