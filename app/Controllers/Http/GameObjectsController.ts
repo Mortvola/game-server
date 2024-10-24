@@ -115,7 +115,7 @@ export default class GameObjectsController {
             query.where('modifierNodeId', payload.modifierNodeId)
               .where('pathId', payload.pathId)
           } else {
-            query.whereNull('modifiderNodeId')
+            query.whereNull('modifierNodeId')
           }
         })
         .first()
