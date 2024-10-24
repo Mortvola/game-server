@@ -449,7 +449,14 @@ export const getTreeDescriptor2 = async (
   }
 }
 
-export const createTree = async (rootNodeId: number, parentNodeId: number, trx: TransactionClientContract) => {
+export const createTree = async (
+  rootNodeId: number,
+  parentNodeId: number,
+  modifierNodeId: number | undefined,
+  path: number[] | undefined,
+  pathId: number | undefined,
+  trx: TransactionClientContract,
+) => {
   const rootNode = await TreeNode.findOrFail(rootNodeId, { client: trx })
 
   let root: TreeNode | undefined
@@ -466,8 +473,11 @@ export const createTree = async (rootNodeId: number, parentNodeId: number, trx: 
 
       treeNode.fill({
         parentNodeId,
-        rootNodeId,
         name: rootNode.name, // Use the name from the root node.
+        rootNodeId,
+        modifierNodeId,
+        path,
+        pathId,
       })
 
       await treeNode.save()
@@ -480,7 +490,7 @@ export const createTree = async (rootNodeId: number, parentNodeId: number, trx: 
   }
 
   if (root) {
-    return getTreeDescriptor(root.id, trx)
+    return getTreeDescriptor2(root.id, trx)
   }
 }
 

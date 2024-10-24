@@ -27,23 +27,28 @@ export default class TreeNodesController {
     }
   }
 
-  public async post ({ request }: HttpContextContract): Promise<NodesResponse | undefined> {
+  public async post ({ request }: HttpContextContract): Promise<NodesResponse2 | undefined> {
     const payload = request.body()
 
     const trx = await Database.transaction()
 
     try {
-      let treeDescriptor: NodesResponse | undefined
+      let treeDescriptor: NodesResponse2 | undefined
 
       if (payload.rootNodeId !== undefined) {
-        treeDescriptor = await createTree(payload.rootNodeId, payload.parentNodeId, trx)
+        treeDescriptor = await createTree(
+          payload.rootNodeId,
+          payload.parentNodeId,
+          payload.modifierNodeId,
+          payload.path,
+          payload.pathId,
+          trx,
+        )
       }
 
       await trx.commit()
 
-      if (treeDescriptor) {
-        return treeDescriptor
-      }
+      return treeDescriptor
     } catch (error) {
       await trx.rollback()
       console.log(error)
@@ -195,10 +200,17 @@ export default class TreeNodesController {
 
       await item.save()
 
-      let nodesResponse: NodesResponse | undefined
+      let nodesResponse: NodesResponse2 | undefined
 
       if (node.parentNodeId) {
-        nodesResponse = await createTree(node.id, node.parentNodeId, trx)
+        nodesResponse = await createTree(
+          node.id,
+          node.parentNodeId,
+          undefined,
+          undefined,
+          undefined,
+          trx,
+        )
 
         node.parentNodeId = null
         await node.save()
