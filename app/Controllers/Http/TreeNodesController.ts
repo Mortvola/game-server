@@ -5,7 +5,7 @@ import GameObject from 'App/Models/GameObject'
 import TreeNode from 'App/Models/TreeNode'
 import {
   createTree, cyclicCheck,
-  getTreeDescriptor, getTreeDescriptor2, NodesResponse, NodesResponse2, SceneObjectDescriptor, TreeNodeDescriptor,
+  getTreeDescriptor2, NodesResponse, NodesResponse2, SceneObjectDescriptor, TreeNodeDescriptor,
 } from 'App/Models/TreeUtils'
 
 export type ItemResponse = { item: FolderItem, root?: TreeNodeDescriptor, objects?: any[] }

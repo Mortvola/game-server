@@ -105,29 +105,35 @@ export default class GameObjectsController {
   }
 
   public async updateGameObject ({ request, params }: HttpContextContract) {
-    const data = request.body().object
+    const payload = request.body()
 
-    if (data) {
-      const query = GameObject.query()
+    if (payload) {
+      let object = await GameObject.query()
         .where('nodeId', params.nodeId)
-
-      if (params.treeId !== undefined) {
-        query.andWhere('treeId', params.treeId)
-      } else {
-        query.andWhereNull('treeId')
-      }
-
-      let object = await query.first()
+        .where((query) => {
+          if (payload.modifierNodeId !== undefined) {
+            query.where('modifierNodeId', payload.modifierNodeId)
+              .where('pathId', payload.pathId)
+          } else {
+            query.whereNull('modifiderNodeId')
+          }
+        })
+        .first()
 
       if (object) {
-        object.object = data
+        object.merge({
+          modifierNodeId: payload.modifierNodeId,
+          pathId: payload.pathId,
+          object: payload.object,
+        })
       } else {
         object = new GameObject()
 
         object.fill({
           nodeId: params.nodeId,
-          treeId: params.treeId,
-          object: data,
+          modifierNodeId: payload.modifierNodeId,
+          pathId: payload.pathId,
+          object: payload.object,
         })
       }
 
@@ -140,9 +146,9 @@ export default class GameObjectsController {
       .where('nodeId', params.nodeId)
 
     if (params.treeId !== undefined) {
-      query.andWhere('treeId', params.treeId)
+      query.andWhere('modifierNodeId', params.treeId)
     } else {
-      query.andWhereNull('treeId')
+      query.andWhereNull('modifierNodeId')
     }
 
     const object = await query.firstOrFail()

@@ -49,7 +49,7 @@ export type NodesResponse2 = {
 }
 
 export const createOverrideObject = async (
-  treeId: number,
+  modifierNodeId: number,
   nodeId: number,
   trx: TransactionClientContract,
 ) => {
@@ -57,7 +57,7 @@ export const createOverrideObject = async (
 
   overrideObject.fill({
     nodeId,
-    treeId,
+    modifierNodeId,
     object: {
       type: 'object',
       components: [],
@@ -146,7 +146,7 @@ export const generateOverrideObjects2 = async (
 
   const baseObject = await GameObject.query({ client: trx })
     .where('nodeId', nodeId)
-    .whereNull('treeId')
+    .whereNull('modifiderNodeId')
     .firstOrFail()
 
   const objects: { object: GameObject, rootId: number, baseTreeId?: number }[] = []
@@ -161,20 +161,20 @@ export const generateOverrideObjects2 = async (
     if (h) {
       let baseTreeId: number | undefined
 
-      for (const treeId of h) {
+      for (const modifierNodeId of h) {
         let object = await GameObject.query({ client: trx })
           .where('nodeId', nodeId)
-          .andWhere('treeId', treeId)
+          .andWhere('modifierNodeId', modifierNodeId)
           .first()
 
         if (!object) {
           // An object does not exist so create one.
-          object = await createOverrideObject(treeId, nodeId, trx)
+          object = await createOverrideObject(modifierNodeId, nodeId, trx)
         }
 
         objects.push({ object, rootId: root.id, baseTreeId })
 
-        baseTreeId = treeId
+        baseTreeId = modifierNodeId
       }
     }
   }
@@ -200,7 +200,7 @@ export const generateOverrideObjects2 = async (
   //     // Ensure that there is an object for the original node at this tree level.
   //     let object = await GameObject.query({ client: trx })
   //       .where('nodeId', nodeId)
-  //       .andWhere('treeId', tree.id)
+  //       .andWhere('modifierNodeId', tree.id)
   //       .first()
 
   //     if (!object) {
@@ -214,7 +214,7 @@ export const generateOverrideObjects2 = async (
 
   return objects.map((entry) => ({
     nodeId: entry.object.nodeId,
-    treeId: entry.object.treeId ?? undefined,
+    treeId: entry.object.modifierNodeId ?? undefined,
     object: entry.object.object,
     rootId: entry.rootId,
   }))
@@ -484,45 +484,45 @@ export const createTree = async (rootNodeId: number, parentNodeId: number, trx: 
   }
 }
 
-export const getPathId = async (startId: number, wrapperId: number, trx: TransactionClientContract) => {
-  // let id = 0
-  // const path: number[] = []
+// export const getPathId = async (startId: number, wrapperId: number, trx: TransactionClientContract) => {
+//   // let id = 0
+//   // const path: number[] = []
 
-  type StackEntry = {
-    nodeId: number,
-    id: number,
-    path: number[]
-  }
+//   type StackEntry = {
+//     nodeId: number,
+//     id: number,
+//     path: number[]
+//   }
 
-  let stack: StackEntry[] = [{ nodeId: startId, id: 0, path: [] }]
+//   let stack: StackEntry[] = [{ nodeId: startId, id: 0, path: [] }]
 
-  while (stack.length > 0) {
-    let { nodeId, id, path } = stack[0]
-    stack = stack.slice(1)
+//   while (stack.length > 0) {
+//     let { nodeId, id, path } = stack[0]
+//     stack = stack.slice(1)
 
-    const node = await TreeNode.findOrFail(nodeId, { client: trx })
+//     const node = await TreeNode.findOrFail(nodeId, { client: trx })
 
-    if (node.rootNodeId !== null) {
-      if (node.id === wrapperId) {
-        return { id, path }
-      }
+//     if (node.rootNodeId !== null) {
+//       if (node.id === wrapperId) {
+//         return { id, path }
+//       }
 
-      if (node.parentNodeId !== null) {
-        stack.push({ nodeId: node.parentNodeId, id: id ^ node.id, path: [...path, node.id] })
-      }
-    } else if (node.parentNodeId !== null) {
-      stack.push({ nodeId: node.parentNodeId, id, path })
-    } else {
-      const wrappers = await TreeNode.query({ client: trx })
-        .where('rootNodeId', node.id)
+//       if (node.parentNodeId !== null) {
+//         stack.push({ nodeId: node.parentNodeId, id: id ^ node.id, path: [...path, node.id] })
+//       }
+//     } else if (node.parentNodeId !== null) {
+//       stack.push({ nodeId: node.parentNodeId, id, path })
+//     } else {
+//       const wrappers = await TreeNode.query({ client: trx })
+//         .where('rootNodeId', node.id)
 
-      stack.push(...wrappers.map((wrapper) => ({
-        nodeId: wrapper.id,
-        id,
-        path,
-      })))
-    }
-  }
+//       stack.push(...wrappers.map((wrapper) => ({
+//         nodeId: wrapper.id,
+//         id,
+//         path,
+//       })))
+//     }
+//   }
 
-  return { id: 0, path: [] }
-}
+//   return { id: 0, path: [] }
+// }

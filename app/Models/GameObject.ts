@@ -63,5 +63,8 @@ export default class GameObject extends BaseModel {
   public nodeId: number
 
   @column()
-  public treeId: number | null
+  public modifierNodeId: number | null
+
+  @column()
+  public pathId: number | null
 }
