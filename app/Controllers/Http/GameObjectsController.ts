@@ -31,7 +31,9 @@ export default class GameObjectsController {
         node.fill({
           name: payload.name,
           parentNodeId: payload.parentNodeId,
-          parentWrapperId: payload.parentTreeId,
+          modifierNodeId: payload.modifierNodeId,
+          path: payload.path,
+          pathId: payload.pathId,
         })
 
         await node.save()

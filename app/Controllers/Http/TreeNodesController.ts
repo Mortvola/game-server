@@ -69,8 +69,8 @@ export default class TreeNodesController {
         node.parentNodeId = payload.parentNodeId
       }
 
-      if (payload.parentWrapperId !== undefined) {
-        node.parentWrapperId = payload.parentWrapperId
+      if (payload.modifierNodeId !== undefined) {
+        node.modifierNodeId = payload.modifierNodeId
       }
 
       if (payload.name !== undefined) {

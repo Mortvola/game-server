@@ -18,7 +18,7 @@ export default class TreeNode extends BaseModel {
   public parentNodeId: number | null
 
   @column()
-  public parentWrapperId: number | null
+  public modifierNodeId: number | null
 
   @column()
   public rootNodeId: number | null

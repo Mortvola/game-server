@@ -6,7 +6,7 @@ export type TreeNodeDescriptor = {
   id: number,
   name?: string,
   wrapperId?: number,
-  parentWrapperId?: number,
+  modifierNodeId?: number,
   pathId?: number,
   path?: number[],
   // connectionOverride?: boolean,
@@ -37,7 +37,7 @@ type TreeNodeDescriptor2 = {
   name: string,
   parentNodeId?: number,
   rootNodeId?: number,
-  parentWrapperId?: number,
+  modifierNodeId?: number,
   children?: number[],
   addedNodes?: AddedNode[],
 }
@@ -77,8 +77,8 @@ export const cyclicCheck = async (node: TreeNode, trx: TransactionClientContract
   while (child) {
     let parentNode: TreeNode | null = null
 
-    if (child.parentWrapperId !== null) {
-      parentNode = await TreeNode.findOrFail(child.parentWrapperId, { client: trx })
+    if (child.modifierNodeId !== null) {
+      parentNode = await TreeNode.findOrFail(child.modifierNodeId, { client: trx })
     }
 
     if (child.parentNodeId !== null) {
@@ -99,8 +99,8 @@ const getRoot = async (node: TreeNode, trx: TransactionClientContract): Promise<
   let root = node
 
   for (;;) {
-    if (root.parentWrapperId !== null) {
-      root = await TreeNode.findOrFail(root.parentWrapperId, { client: trx })
+    if (root.modifierNodeId !== null) {
+      root = await TreeNode.findOrFail(root.modifierNodeId, { client: trx })
     } else if (root.parentNodeId !== null) {
       root = await TreeNode.findOrFail(root.parentNodeId, { client: trx })
     } else {
@@ -297,7 +297,7 @@ export const getTreeDescriptor = async (
         id: node.id,
         name: wrapper?.name ?? node.name,
         wrapperId: wrapper?.id,
-        parentWrapperId: (wrapper !== undefined ? wrapper.parentWrapperId : node.parentWrapperId) ?? undefined,
+        modifierNodeId: (wrapper !== undefined ? wrapper.modifierNodeId : node.modifierNodeId) ?? undefined,
         pathId: node.pathId ?? undefined,
         path: node.path ?? undefined,
         children: [],
@@ -317,7 +317,7 @@ export const getTreeDescriptor = async (
 
       let children = await TreeNode.query({ client: trx })
         .where('parentNodeId', node.id)
-        .andWhereNull('parentWrapperId')
+        .andWhereNull('modifierNodeId')
 
       stack = stack.concat(children.map((child) => ({
         node: child,
@@ -330,13 +330,13 @@ export const getTreeDescriptor = async (
       for (let i = 0; i < subtrees.length; i += 1) {
         children = await TreeNode.query({ client: trx })
           .where('parentNodeId', node.id)
-          .where('parentWrapperId', subtrees[i].id)
+          .where('modifierNodeId', subtrees[i].id)
 
         for (const child of children) {
           // Only inlcude the node if the pathId matches
           let pathId = 0
           for (let p = subtrees.length - 1; p >= 0; p -= 1) {
-            if (subtrees[p].id === child.parentWrapperId) {
+            if (subtrees[p].id === child.modifierNodeId) {
               break
             }
 
@@ -401,7 +401,7 @@ export const getTreeDescriptor2 = async (
     if (node.rootNodeId === null) {
       children = await TreeNode.query({ client: trx })
         .where('parentNodeId', node.id)
-        .andWhereNull('parentWrapperId')
+        .andWhereNull('modifierNodeId')
 
       stack.push(...children)
     } else {
@@ -411,7 +411,7 @@ export const getTreeDescriptor2 = async (
       stack.push(root)
 
       addedNodes = await TreeNode.query({ client: trx })
-        .andWhere('parentWrapperId', node.id)
+        .andWhere('modifierNodeId', node.id)
 
       stack.push(...addedNodes)
     }
@@ -441,7 +441,7 @@ export const getTreeDescriptor2 = async (
       name: node.node.name,
       parentNodeId: node.node.parentNodeId ?? undefined,
       rootNodeId: node.node.rootNodeId ?? undefined,
-      parentWrapperId: node.node.parentWrapperId ?? undefined,
+      modifierNodeId: node.node.modifierNodeId ?? undefined,
       children: node.children,
       addedNodes: node.addedNodes,
     })),
