@@ -1,6 +1,6 @@
 import { TransactionClientContract } from '@ioc:Adonis/Lucid/Database'
 import TreeNode from './TreeNode'
-import GameObject from './GameObject'
+import SceneObject from './SceneObject'
 
 export type TreeNodeDescriptor = {
   id: number,
@@ -45,7 +45,7 @@ export type TreeNodeDescriptor2 = {
 export type NodesResponse2 = {
   rootNodeId: number,
   nodes: TreeNodeDescriptor2[],
-  objects: GameObject[],
+  objects: SceneObject[],
 }
 
 export const createOverrideObject = async (
@@ -53,7 +53,7 @@ export const createOverrideObject = async (
   nodeId: number,
   trx: TransactionClientContract,
 ) => {
-  const overrideObject = new GameObject().useTransaction(trx)
+  const overrideObject = new SceneObject().useTransaction(trx)
 
   overrideObject.fill({
     nodeId,
@@ -144,12 +144,12 @@ export const generateOverrideObjects2 = async (
 ): Promise<SceneObjectDescriptor[]> => {
   let node: null | TreeNode = await TreeNode.findOrFail(nodeId, { client: trx })
 
-  const baseObject = await GameObject.query({ client: trx })
+  const baseObject = await SceneObject.query({ client: trx })
     .where('nodeId', nodeId)
     .whereNull('modifiderNodeId')
     .firstOrFail()
 
-  const objects: { object: GameObject, rootId: number, baseTreeId?: number }[] = []
+  const objects: { object: SceneObject, rootId: number, baseTreeId?: number }[] = []
 
   const root = await getRoot(node, trx)
 
@@ -162,7 +162,7 @@ export const generateOverrideObjects2 = async (
       let baseTreeId: number | undefined
 
       for (const modifierNodeId of h) {
-        let object = await GameObject.query({ client: trx })
+        let object = await SceneObject.query({ client: trx })
           .where('nodeId', nodeId)
           .andWhere('modifierNodeId', modifierNodeId)
           .first()
@@ -179,7 +179,7 @@ export const generateOverrideObjects2 = async (
     }
   }
 
-  // type StackEntry = { node: TreeNode, baseObject: GameObject, baseTreeId: number | undefined }
+  // type StackEntry = { node: TreeNode, baseObject: SceneObject, baseTreeId: number | undefined }
   // let stack: StackEntry[] = [{ node, baseObject, baseTreeId: undefined }]
 
   // while (stack.length > 0) {
@@ -198,7 +198,7 @@ export const generateOverrideObjects2 = async (
   //   for (const tree of trees) {
   //     // Found tree that contains the root
   //     // Ensure that there is an object for the original node at this tree level.
-  //     let object = await GameObject.query({ client: trx })
+  //     let object = await SceneObject.query({ client: trx })
   //       .where('nodeId', nodeId)
   //       .andWhere('modifierNodeId', tree.id)
   //       .first()
@@ -234,7 +234,7 @@ export const generateOverrideObjects2 = async (
 //     stack = stack.slice(1)
 
 //     if (node.rootNodeId === null) {
-//       const object = await GameObject.findByOrFail('nodeId', node.id, { client: trx })
+//       const object = await SceneObject.findByOrFail('nodeId', node.id, { client: trx })
 
 //       await createOverrideObject(treeId, object.nodeId, trx)
 
@@ -389,7 +389,7 @@ export const getTreeDescriptor = async (
   let stack: StackEntry[] = [start]
 
   const nodes: Map<number, { node: TreeNode, children?: number[]; addedNodes?: AddedNode[] }> = new Map()
-  const objects: Map<number, GameObject[]> = new Map()
+  const objects: Map<number, SceneObject[]> = new Map()
 
   while (stack.length > 0) {
     const node = stack[0]
@@ -427,7 +427,7 @@ export const getTreeDescriptor = async (
         })),
       })
 
-      const nodeObjects = await GameObject.query({ client: trx})
+      const nodeObjects = await SceneObject.query({ client: trx})
         .where('nodeId', node.id)
 
       objects.set(node.id, nodeObjects)

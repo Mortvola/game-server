@@ -70,12 +70,12 @@ Route.group(() => {
   Route.get('/textures-list', 'TexturesController.getTextureList')
 
   Route.group(() => {
-    Route.post('', 'GameObjectsController.uploadGameObject')
-    Route.delete('/:nodeId/:treeId?', 'GameObjectsController.deleteGameObject')
-    Route.put('/:nodeId', 'GameObjectsController.updateGameObject')
+    Route.post('', 'SceneObjectsController.uploadSceneObject')
+    Route.delete('/:nodeId/:treeId?', 'SceneObjectsController.deleteSceneObject')
+    Route.put('/:nodeId', 'SceneObjectsController.updateSceneObject')
   }).prefix('/scene-objects')
 
-  Route.get('/scene-objects-list', 'GameObjectsController.getGameObjectList')
+  Route.get('/scene-objects-list', 'SceneObjectsController.getSceneObjectList')
 
   Route.group(() => {
     Route.get('', 'FoldersController.getFolder')

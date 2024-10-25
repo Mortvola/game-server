@@ -1,13 +1,13 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
-import GameObject from 'App/Models/GameObject'
+import SceneObject from 'App/Models/SceneObject'
 import TreeNode from 'App/Models/TreeNode'
 
-export default class GameObjectsController {
-  public async uploadGameObject ({ request }: HttpContextContract) {
+export default class SceneObjectsController {
+  public async uploadSceneObject ({ request }: HttpContextContract) {
     const trx = await Database.transaction()
     try {
-      const object = new GameObject().useTransaction(trx)
+      const object = new SceneObject().useTransaction(trx)
 
       const payload = request.body()
 
@@ -74,8 +74,8 @@ export default class GameObjectsController {
     }
   }
 
-  public async getGameObject ({ params }: HttpContextContract) {
-    const object = await GameObject.findOrFail(params.id)
+  public async getSceneObject ({ params }: HttpContextContract) {
+    const object = await SceneObject.findOrFail(params.id)
 
     // const oldObject = object.object as {
     //   modelId: number,
@@ -106,11 +106,11 @@ export default class GameObjectsController {
     return object
   }
 
-  public async updateGameObject ({ request, params }: HttpContextContract) {
+  public async updateSceneObject ({ request, params }: HttpContextContract) {
     const payload = request.body()
 
     if (payload) {
-      let object = await GameObject.query()
+      let object = await SceneObject.query()
         .where('nodeId', params.nodeId)
         .where((query) => {
           if (payload.modifierNodeId !== undefined) {
@@ -129,7 +129,7 @@ export default class GameObjectsController {
           object: payload.object,
         })
       } else {
-        object = new GameObject()
+        object = new SceneObject()
 
         object.fill({
           nodeId: params.nodeId,
@@ -143,8 +143,8 @@ export default class GameObjectsController {
     }
   }
 
-  public async deleteGameObject ({ params }: HttpContextContract) {
-    const query = GameObject.query()
+  public async deleteSceneObject ({ params }: HttpContextContract) {
+    const query = SceneObject.query()
       .where('nodeId', params.nodeId)
 
     if (params.treeId !== undefined) {
@@ -160,8 +160,8 @@ export default class GameObjectsController {
     }
   }
 
-  public async getGameObjectList ({}: HttpContextContract) {
-    const objects = await GameObject.all()
+  public async getSceneObjectList ({}: HttpContextContract) {
+    const objects = await SceneObject.all()
 
     for (let i = 0; i < objects.length; i += 1) {
       // const oldObject = objects[i].object as {

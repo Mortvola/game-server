@@ -1,7 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
 import FolderItem, { ItemType } from 'App/Models/FolderItem'
-import GameObject from 'App/Models/GameObject'
+import SceneObject from 'App/Models/SceneObject'
 import TreeNode from 'App/Models/TreeNode'
 import {
   createTree, cyclicCheck,
@@ -185,7 +185,7 @@ export default class TreeNodesController {
     try {
       const node = await TreeNode.findOrFail(payload.nodeId, { client: trx })
 
-      // Find the root game object to get the name for the folder item.
+      // Find the root scene object to get the name for the folder item.
       // let root = node
       // while (root.rootNodeId !== null) {
       //   root = await TreeNode.findOrFail(root.rootNodeId, { client: trx })
@@ -236,7 +236,7 @@ export default class TreeNodesController {
       const node = await TreeNode.find(params.id, { client: trx })
 
       if (node) {
-        const object = await GameObject.findBy('nodeId', node.id, { client: trx })
+        const object = await SceneObject.findBy('nodeId', node.id, { client: trx })
 
         if (object) {
           await object.delete()

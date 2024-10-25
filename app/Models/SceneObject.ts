@@ -44,7 +44,7 @@ export type TransformPropsDescriptor = {
   scale?: number[];
 }
 
-export default class GameObject extends BaseModel {
+export default class SceneObject extends BaseModel {
   @column({ isPrimary: true, serializeAs: null })
   public id: number
 
