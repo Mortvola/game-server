@@ -457,11 +457,16 @@ export const createTree = async (
 ) => {
   const rootNode = await TreeNode.findOrFail(rootNodeId, { client: trx })
 
+  const sceneObject = await SceneObject.query({ client: trx })
+    .where('nodeId', rootNode.id)
+    .whereNull('modifierNodeId')
+    .firstOrFail()
+
   const root = new TreeNode()
     .useTransaction(trx)
     .fill({
       parentNodeId,
-      name: rootNode.name, // Use the name from the root node.
+      name: sceneObject.name ?? 'Unknown', // Use the name from the scene object of the root node.
       rootNodeId,
       modifierNodeId,
       path,

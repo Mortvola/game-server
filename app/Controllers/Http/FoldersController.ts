@@ -9,6 +9,7 @@ import Database from '@ioc:Adonis/Lucid/Database'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
 import Scene from 'App/Models/Scene'
 import TreeNode from 'App/Models/TreeNode'
+import SceneObject from 'App/Models/SceneObject'
 
 export default class FoldersController {
   public async getFolder ({ params }: HttpContextContract) {
@@ -65,7 +66,12 @@ export default class FoldersController {
           const treeNode = await TreeNode.find(item.itemId)
 
           if (treeNode) {
-            item.name = treeNode.name
+            const sceneObject = await SceneObject.query()
+              .where('nodeId', treeNode.id)
+              .whereNull('modifierNodeId')
+              .first()
+
+            item.name = sceneObject?.name ?? 'Unknown'
           }
 
           break
@@ -143,9 +149,16 @@ export default class FoldersController {
           case ItemType.TreeNode: {
             const treeNode = await TreeNode.findOrFail(item.itemId, { client: trx })
 
-            treeNode.name = name
+            if (treeNode) {
+              const sceneObject = await SceneObject.query({ client: trx })
+                .where('nodeId', treeNode.id)
+                .whereNull('modifierNodeId')
+                .firstOrFail()
 
-            await treeNode.save()
+              sceneObject.name = name
+
+              await sceneObject.save()
+            }
 
             break
           }

@@ -80,10 +80,6 @@ export default class TreeNodesController {
         node.modifierNodeId = payload.modifierNodeId
       }
 
-      if (payload.name !== undefined) {
-        node.name = payload.name
-      }
-
       if (payload.path !== undefined) {
         node.path = payload.path
       }
@@ -194,7 +190,6 @@ export default class TreeNodesController {
       const item = new FolderItem().useTransaction(trx)
 
       item.fill({
-        name: node.name ?? 'Unknown',
         itemId: payload.nodeId,
         parentId: payload.folderId,
         type: ItemType.TreeNode,

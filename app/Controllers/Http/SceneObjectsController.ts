@@ -12,6 +12,7 @@ export default class SceneObjectsController {
       const payload = request.body()
 
       object.fill({
+        name: payload.name,
         object: {
           type: 'object',
           components: payload.component
@@ -29,7 +30,6 @@ export default class SceneObjectsController {
         const node = new TreeNode().useTransaction(trx)
 
         node.fill({
-          name: payload.name,
           parentNodeId: payload.parentNodeId,
           modifierNodeId: payload.modifierNodeId,
           path: payload.path,

@@ -12,9 +12,6 @@ export default class TreeNode extends BaseModel {
   public updatedAt: DateTime
 
   @column()
-  public name: string
-
-  @column()
   public parentNodeId: number | null
 
   @column()
