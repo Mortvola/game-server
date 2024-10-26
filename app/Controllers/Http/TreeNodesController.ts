@@ -190,6 +190,7 @@ export default class TreeNodesController {
       const item = new FolderItem().useTransaction(trx)
 
       item.fill({
+        name: 'Unknown',
         itemId: payload.nodeId,
         parentId: payload.folderId,
         type: ItemType.TreeNode,

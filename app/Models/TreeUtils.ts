@@ -455,18 +455,10 @@ export const createTree = async (
   pathId: number | undefined,
   trx: TransactionClientContract,
 ) => {
-  const rootNode = await TreeNode.findOrFail(rootNodeId, { client: trx })
-
-  const sceneObject = await SceneObject.query({ client: trx })
-    .where('nodeId', rootNode.id)
-    .whereNull('modifierNodeId')
-    .firstOrFail()
-
   const root = new TreeNode()
     .useTransaction(trx)
     .fill({
       parentNodeId,
-      name: sceneObject.name ?? 'Unknown', // Use the name from the scene object of the root node.
       rootNodeId,
       modifierNodeId,
       path,
@@ -477,46 +469,3 @@ export const createTree = async (
 
   return getTreeDescriptor(root.id, trx)
 }
-
-// export const getPathId = async (startId: number, wrapperId: number, trx: TransactionClientContract) => {
-//   // let id = 0
-//   // const path: number[] = []
-
-//   type StackEntry = {
-//     nodeId: number,
-//     id: number,
-//     path: number[]
-//   }
-
-//   let stack: StackEntry[] = [{ nodeId: startId, id: 0, path: [] }]
-
-//   while (stack.length > 0) {
-//     let { nodeId, id, path } = stack[0]
-//     stack = stack.slice(1)
-
-//     const node = await TreeNode.findOrFail(nodeId, { client: trx })
-
-//     if (node.rootNodeId !== null) {
-//       if (node.id === wrapperId) {
-//         return { id, path }
-//       }
-
-//       if (node.parentNodeId !== null) {
-//         stack.push({ nodeId: node.parentNodeId, id: id ^ node.id, path: [...path, node.id] })
-//       }
-//     } else if (node.parentNodeId !== null) {
-//       stack.push({ nodeId: node.parentNodeId, id, path })
-//     } else {
-//       const wrappers = await TreeNode.query({ client: trx })
-//         .where('rootNodeId', node.id)
-
-//       stack.push(...wrappers.map((wrapper) => ({
-//         nodeId: wrapper.id,
-//         id,
-//         path,
-//       })))
-//     }
-//   }
-
-//   return { id: 0, path: [] }
-// }
