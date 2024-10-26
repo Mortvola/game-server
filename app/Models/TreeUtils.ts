@@ -79,17 +79,30 @@ export const getTreeDescriptor = async (
         .where('parentNodeId', node.id)
         .andWhereNull('modifierNodeId')
 
-      stack.push(...children)
+      // Only push onto the stack nodes that we have not yet seen
+      for (const child of children) {
+        if (!nodes.has(child.id) && !stack.some((n) => n.id === child.id)) {
+          stack.push(child)
+        }
+      }
     } else {
       // This is a wrapper node.
       const root = await TreeNode.findOrFail(node.rootNodeId, { client: trx })
 
-      stack.push(root)
+      // Only push onto the stack nodes that we have not yet seen
+      if (!nodes.has(root.id) && !stack.some((n) => n.id === root.id)) {
+        stack.push(root)
+      }
 
       addedNodes = await TreeNode.query({ client: trx })
         .andWhere('modifierNodeId', node.id)
 
-      stack.push(...addedNodes)
+      // Only push onto the stack nodes that we have not yet seen
+      for (const added of addedNodes) {
+        if (!nodes.has(added.id) && !stack.some((n) => n.id === added.id)) {
+          stack.push(added)
+        }
+      }
     }
 
     if (!nodes.has(node.id)) {
@@ -145,4 +158,54 @@ export const createTree = async (
   await root.save()
 
   return getTreeDescriptor(root.id, trx)
+}
+
+export const deleteTree = async (rootNode: TreeNode, trx: TransactionClientContract) => {
+  let stack: TreeNode[] = [rootNode]
+
+  const nodes: Map<number, TreeNode> = new Map()
+
+  // Put all nodes into a map and only
+  // push nodes onto the stack that are not
+  // in the map to prevent cyclic issues.
+  while (stack.length > 0) {
+    const node = stack[0]
+    stack = stack.slice(1)
+
+    nodes.set(node.id, node)
+
+    // Only delete nodes that are not connected
+    // through a modification.
+    // Also, don't delete the root node of modifier nodes.
+    const children = await TreeNode.query({ client: trx })
+      .where('parentNodeId', node.id)
+      .whereNull('modifierNodeId')
+
+    // Only push children onto the stack if they are
+    // not in the map and not already on the stack
+    for (const child of children) {
+      if (!nodes.has(child.id) && !stack.some((n) => n.id === child.id)) {
+        stack.push(child)
+      }
+    }
+  }
+
+  // Iterate through the map and delete the nodes
+  // and associated data.
+  for (const [, node] of Array.from(nodes)) {
+    // Delete any associated scene objects (there should only be 1)
+    const objects = await SceneObject.query({ client: trx })
+      .where('nodeId', node.id)
+      .whereNull('modifierNodeId')
+
+    if (objects.length > 1) {
+      console.log(`Warning: ${objects.length} base scene objects found for node: ${node.id} `)
+    }
+
+    for (const object of objects) {
+      await object.delete()
+    }
+
+    await node.delete()
+  }
 }

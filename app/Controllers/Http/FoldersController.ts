@@ -10,6 +10,7 @@ import { schema, rules } from '@ioc:Adonis/Core/Validator'
 import Scene from 'App/Models/Scene'
 import TreeNode from 'App/Models/TreeNode'
 import SceneObject from 'App/Models/SceneObject'
+import { deleteTree } from 'App/Models/TreeUtils'
 
 export default class FoldersController {
   public async getFolder ({ params }: HttpContextContract) {
@@ -219,6 +220,39 @@ export default class FoldersController {
               await Drive.delete(`models/${model.filename}`)
               await model.delete()
             }
+            break
+
+          case ItemType.TreeNode:
+            const treeNode = await TreeNode.find(item.itemId, { client: trx })
+
+            if (treeNode) {
+              // If there are existing modifier nodes that use this
+              // root then don't delete the node tree.
+              const modifierNodes = await TreeNode.query({ client: trx })
+                .where('rootNodeId', treeNode.id)
+
+              if (modifierNodes.length > 0) {
+                throw new Error(`Prefab ${treeNode.id} in use.`)
+              }
+
+              await deleteTree(treeNode, trx)
+            }
+
+            break
+
+          case ItemType.Scene:
+            const scene = await Scene.find(item.itemId, { client: trx })
+
+            if (scene) {
+              const rootNode = await TreeNode.find(scene.rootNodeId, { client: trx })
+
+              if (rootNode) {
+                await deleteTree(rootNode, trx)
+              }
+
+              await scene.delete()
+            }
+
             break
         }
       }
