@@ -124,6 +124,7 @@ export default class SceneObjectsController {
 
       if (object) {
         object.merge({
+          name: payload.name,
           modifierNodeId: payload.modifierNodeId,
           pathId: payload.pathId,
           object: payload.object,
@@ -133,6 +134,7 @@ export default class SceneObjectsController {
 
         object.fill({
           nodeId: params.nodeId,
+          name: payload.name,
           modifierNodeId: payload.modifierNodeId,
           pathId: payload.pathId,
           object: payload.object,

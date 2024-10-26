@@ -34,7 +34,6 @@ type AddedNode = {
 
 export type TreeNodeDescriptor2 = {
   id: number,
-  name: string,
   parentNodeId?: number,
   rootNodeId?: number,
   modifierNodeId?: number,
@@ -438,7 +437,6 @@ export const getTreeDescriptor = async (
     rootNodeId,
     nodes: Array.from(nodes.values()).map((node) => ({
       id: node.node.id,
-      name: node.node.name,
       parentNodeId: node.node.parentNodeId ?? undefined,
       rootNodeId: node.node.rootNodeId ?? undefined,
       modifierNodeId: node.node.modifierNodeId ?? undefined,
