@@ -1,11 +1,10 @@
 import { TransactionClientContract } from '@ioc:Adonis/Lucid/Database'
 import TreeNode from './TreeNode'
 import SceneObject from './SceneObject'
+import Component from './Component'
 
 export type SceneObjectDescriptor = {
   nodeId: number,
-  treeId?: number,
-
   object: unknown,
 }
 
@@ -24,10 +23,26 @@ export type TreeNodeDescriptor2 = {
   addedNodes?: AddedNode[],
 }
 
+export type ComponentDescriptor = {
+  id: number,
+  type: string,
+  props?: unknown,
+}
+
+export type SceneObjectDescriptor2 = {
+  nodeId: number,
+  name?: string,
+  modifierNodeId?: number,
+  pathId?: number,
+  components: number[],
+  modifications: Record<string, unknown>,
+}
+
 export type NodesResponse2 = {
   rootNodeId: number,
   nodes: TreeNodeDescriptor2[],
-  objects: SceneObject[],
+  objects: SceneObjectDescriptor2[],
+  components: ComponentDescriptor[],
 }
 
 export const cyclicCheck = async (node: TreeNode, trx: TransactionClientContract) => {
@@ -65,7 +80,8 @@ export const getTreeDescriptor = async (
   let stack: StackEntry[] = [start]
 
   const nodes: Map<number, { node: TreeNode, children?: number[]; addedNodes?: AddedNode[] }> = new Map()
-  const objects: Map<number, SceneObject[]> = new Map()
+  const objects: Map<number, SceneObjectDescriptor2[]> = new Map()
+  const components: Map<number, ComponentDescriptor> = new Map()
 
   while (stack.length > 0) {
     const node = stack[0]
@@ -116,10 +132,42 @@ export const getTreeDescriptor = async (
         })),
       })
 
-      const nodeObjects = await SceneObject.query({ client: trx})
+      const sceneObjects = await SceneObject.query({ client: trx})
         .where('nodeId', node.id)
 
-      objects.set(node.id, nodeObjects)
+      const o: SceneObjectDescriptor2[] = []
+
+      for (const sceneObject of sceneObjects) {
+        const descriptor: SceneObjectDescriptor2 = {
+          nodeId: sceneObject.nodeId,
+          name: sceneObject.name ?? undefined,
+          modifierNodeId: sceneObject.modifierNodeId ?? undefined,
+          pathId: sceneObject.pathId ?? undefined,
+          components: [],
+          modifications: sceneObject.modifications,
+        }
+
+        for (const compId of sceneObject.components) {
+          const component = await Component.find(compId)
+
+          if (component) {
+            components.set(
+              component.id,
+              {
+                id: component.id,
+                type: component.type,
+                props: component.props,
+              },
+            )
+
+            descriptor.components.push(component.id)
+          }
+        }
+
+        o.push(descriptor)
+      }
+
+      objects.set(node.id, o)
     }
   }
 
@@ -134,6 +182,7 @@ export const getTreeDescriptor = async (
       addedNodes: node.addedNodes,
     })),
     objects: Array.from(objects.values()).flatMap((obj) => obj),
+    components: Array.from(components.values()),
   }
 }
 

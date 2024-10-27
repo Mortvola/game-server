@@ -78,6 +78,10 @@ Route.group(() => {
   Route.get('/scene-objects-list', 'SceneObjectsController.getSceneObjectList')
 
   Route.group(() => {
+    Route.patch('/:id', 'ComponentsController.update')
+  }).prefix('/components')
+
+  Route.group(() => {
     Route.get('', 'FoldersController.getFolder')
     Route.get('/:id', 'FoldersController.getFolder')
     Route.post('', 'FoldersController.makeFolder')

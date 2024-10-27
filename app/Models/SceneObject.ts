@@ -58,9 +58,19 @@ export default class SceneObject extends BaseModel {
   public name: string | null
 
   @column({
-    prepare: (value: unknown) => JSON.stringify(value),
+    prepare: (value: number[]) => JSON.stringify(value),
   })
-  public object: { type: string, components: ComponentDescriptor[], transformProps?: TransformPropsDescriptor }
+  public components: number[]
+
+  @column({
+    prepare: (value: Record<string, unknown>) => JSON.stringify(value),
+  })
+  public modifications: Record<string, unknown>
+
+  // @column({
+  //   prepare: (value: unknown) => JSON.stringify(value),
+  // })
+  // public object: { type: string, components: ComponentDescriptor[], transformProps?: TransformPropsDescriptor }
 
   @column()
   public nodeId: number

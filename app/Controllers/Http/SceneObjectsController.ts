@@ -13,17 +13,17 @@ export default class SceneObjectsController {
 
       object.fill({
         name: payload.name,
-        object: {
-          type: 'object',
-          components: payload.component
-            ? [{ id: 0, type: payload.component.type, props: payload.component.props }]
-            : [],
-          transformProps: {
-            translate: [0, 0, 0],
-            rotate: [0, 0, 0],
-            scale: [1, 1, 1],
-          },
-        },
+        // object: {
+        //   type: 'object',
+        //   components: payload.component
+        //     ? [{ id: 0, type: payload.component.type, props: payload.component.props }]
+        //     : [],
+        //   transformProps: {
+        //     translate: [0, 0, 0],
+        //     rotate: [0, 0, 0],
+        //     scale: [1, 1, 1],
+        //   },
+        // },
       })
 
       if (payload.parentNodeId !== undefined) {
@@ -127,7 +127,8 @@ export default class SceneObjectsController {
           name: payload.name,
           modifierNodeId: payload.modifierNodeId,
           pathId: payload.pathId,
-          object: payload.object,
+          modifications: payload.modifications,
+          components: payload.components,
         })
       } else {
         object = new SceneObject()
@@ -137,7 +138,8 @@ export default class SceneObjectsController {
           name: payload.name,
           modifierNodeId: payload.modifierNodeId,
           pathId: payload.pathId,
-          object: payload.object,
+          modifications: payload.modifications,
+          components: payload.components,
         })
       }
 
