@@ -110,24 +110,11 @@ export default class SceneObjectsController {
     const payload = request.body()
 
     if (payload) {
-      let object = await SceneObject.query()
-        .where('nodeId', params.nodeId)
-        .where((query) => {
-          if (payload.modifierNodeId !== undefined) {
-            query.where('modifierNodeId', payload.modifierNodeId)
-              .where('pathId', payload.pathId)
-          } else {
-            query.whereNull('modifierNodeId')
-          }
-        })
-        .first()
+      let object = await SceneObject.findBy('nodeId', params.nodeId)
 
       if (object) {
         object.merge({
           name: payload.name,
-          // modifierNodeId: payload.modifierNodeId,
-          // pathId: payload.pathId,
-          // modifications: payload.modifications,
           components: payload.components,
         })
       } else {
@@ -136,9 +123,6 @@ export default class SceneObjectsController {
         object.fill({
           nodeId: params.nodeId,
           name: payload.name,
-          // modifierNodeId: payload.modifierNodeId,
-          // pathId: payload.pathId,
-          // modifications: payload.modifications,
           components: payload.components,
         })
       }
