@@ -103,6 +103,10 @@ Route.group(() => {
     Route.delete('/:id', 'TreeNodesController.delete')
     Route.patch('/:id', 'TreeNodesController.patch')
   }).prefix('/tree-nodes')
+
+  Route.group(() => {
+    Route.put('', 'NodeMOdificationsController.update')
+  }).prefix('node-modifications')
 })
   .prefix('/api')
 

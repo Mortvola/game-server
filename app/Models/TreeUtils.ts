@@ -2,6 +2,7 @@ import { TransactionClientContract } from '@ioc:Adonis/Lucid/Database'
 import TreeNode from './TreeNode'
 import SceneObject from './SceneObject'
 import Component from './Component'
+import NodeModification from './NodeModification'
 
 export type SceneObjectDescriptor = {
   nodeId: number,
@@ -21,6 +22,7 @@ export type TreeNodeDescriptor2 = {
   modifierNodeId?: number,
   children?: number[],
   addedNodes?: AddedNode[],
+  modifications?: NodeModification[],
 }
 
 export type ComponentDescriptor = {
@@ -32,10 +34,10 @@ export type ComponentDescriptor = {
 export type SceneObjectDescriptor2 = {
   nodeId: number,
   name?: string,
-  modifierNodeId?: number,
-  pathId?: number,
+  // modifierNodeId?: number,
+  // pathId?: number,
   components: number[],
-  modifications: Record<string, unknown>,
+  // modifications: Record<string, unknown>,
 }
 
 export type NodesResponse2 = {
@@ -79,7 +81,14 @@ export const getTreeDescriptor = async (
 
   let stack: StackEntry[] = [start]
 
-  const nodes: Map<number, { node: TreeNode, children?: number[]; addedNodes?: AddedNode[] }> = new Map()
+  // type NodeEntry = {
+  //   node: TreeNode,
+  //   children?: number[];
+  //   addedNodes?: AddedNode[],
+  //   modifications?: NodeModification[],
+  // }
+
+  const nodes: Map<number, TreeNodeDescriptor2> = new Map()
   const objects: Map<number, SceneObjectDescriptor2[]> = new Map()
   const components: Map<number, ComponentDescriptor> = new Map()
 
@@ -87,11 +96,8 @@ export const getTreeDescriptor = async (
     const node = stack[0]
     stack = stack.slice(1)
 
-    let children: TreeNode[] | undefined
-    let addedNodes: TreeNode[] | undefined
-
     if (node.rootNodeId === null) {
-      children = await TreeNode.query({ client: trx })
+      const children = await TreeNode.query({ client: trx })
         .where('parentNodeId', node.id)
         .andWhereNull('modifierNodeId')
 
@@ -101,8 +107,16 @@ export const getTreeDescriptor = async (
           stack.push(child)
         }
       }
+
+      if (!nodes.has(node.id)) {
+        nodes.set(node.id, {
+          id: node.id,
+          parentNodeId: node.parentNodeId ?? undefined,
+          children: children?.map((child) => child.id),
+        })
+      }
     } else {
-      // This is a wrapper node.
+      // This is a modifier node.
       const root = await TreeNode.findOrFail(node.rootNodeId, { client: trx })
 
       // Only push onto the stack nodes that we have not yet seen
@@ -110,7 +124,7 @@ export const getTreeDescriptor = async (
         stack.push(root)
       }
 
-      addedNodes = await TreeNode.query({ client: trx })
+      const addedNodes = await TreeNode.query({ client: trx })
         .andWhere('modifierNodeId', node.id)
 
       // Only push onto the stack nodes that we have not yet seen
@@ -119,68 +133,78 @@ export const getTreeDescriptor = async (
           stack.push(added)
         }
       }
+
+      if (!nodes.has(node.id)) {
+        const mods = await NodeModification.query({ client: trx })
+          .where('modifierNodeId', node.id)
+
+        nodes.set(node.id, {
+          id: node.id,
+          parentNodeId: node.parentNodeId ?? undefined,
+          rootNodeId: node.rootNodeId ?? undefined,
+
+          addedNodes: addedNodes?.map((addedNode) => ({
+            nodeId: addedNode.id,
+            parentNodeId: addedNode.parentNodeId ?? 0,
+            pathId: addedNode.pathId ?? 0,
+          })),
+          modifications: mods,
+        })
+      }
     }
+  }
 
-    if (!nodes.has(node.id)) {
-      nodes.set(node.id, {
-        node,
-        children: children?.map((child) => child.id),
-        addedNodes: addedNodes?.map((addedNode) => ({
-          nodeId: addedNode.id,
-          parentNodeId: addedNode.parentNodeId ?? 0,
-          pathId: addedNode.pathId ?? 0,
-        })),
-      })
+  for (const node of Array.from(nodes.values())) {
+    const sceneObjects = await SceneObject.query({ client: trx})
+      .where('nodeId', node.id)
+      .whereNull('modifier_node_id')
 
-      const sceneObjects = await SceneObject.query({ client: trx})
-        .where('nodeId', node.id)
+    const o: SceneObjectDescriptor2[] = []
 
-      const o: SceneObjectDescriptor2[] = []
-
-      for (const sceneObject of sceneObjects) {
-        const descriptor: SceneObjectDescriptor2 = {
-          nodeId: sceneObject.nodeId,
-          name: sceneObject.name ?? undefined,
-          modifierNodeId: sceneObject.modifierNodeId ?? undefined,
-          pathId: sceneObject.pathId ?? undefined,
-          components: [],
-          modifications: sceneObject.modifications,
-        }
-
-        for (const compId of sceneObject.components) {
-          const component = await Component.find(compId)
-
-          if (component) {
-            components.set(
-              component.id,
-              {
-                id: component.id,
-                type: component.type,
-                props: component.props,
-              },
-            )
-
-            descriptor.components.push(component.id)
-          }
-        }
-
-        o.push(descriptor)
+    for (const sceneObject of sceneObjects) {
+      const descriptor: SceneObjectDescriptor2 = {
+        nodeId: sceneObject.nodeId,
+        name: sceneObject.name ?? undefined,
+        // modifierNodeId: sceneObject.modifierNodeId ?? undefined,
+        // pathId: sceneObject.pathId ?? undefined,
+        components: [],
+        // modifications: sceneObject.modifications,
       }
 
-      objects.set(node.id, o)
+      for (const compId of sceneObject.components) {
+        const component = await Component.find(compId)
+
+        if (component) {
+          components.set(
+            component.id,
+            {
+              id: component.id,
+              type: component.type,
+              props: component.props,
+            },
+          )
+
+          descriptor.components.push(component.id)
+        }
+      }
+
+      o.push(descriptor)
     }
+
+    objects.set(node.id, o)
   }
 
   return {
     rootNodeId,
-    nodes: Array.from(nodes.values()).map((node) => ({
-      id: node.node.id,
-      parentNodeId: node.node.parentNodeId ?? undefined,
-      rootNodeId: node.node.rootNodeId ?? undefined,
-      modifierNodeId: node.node.modifierNodeId ?? undefined,
-      children: node.children,
-      addedNodes: node.addedNodes,
-    })),
+    nodes: Array.from(nodes.values()),
+    // .map((node) => ({
+    //   id: node.node.id,
+    //   parentNodeId: node.node.parentNodeId ?? undefined,
+    //   rootNodeId: node.node.rootNodeId ?? undefined,
+    //   modifierNodeId: node.node.modifierNodeId ?? undefined,
+    //   children: node.children,
+    //   addedNodes: node.addedNodes,
+    // })),
     objects: Array.from(objects.values()).flatMap((obj) => obj),
     components: Array.from(components.values()),
   }

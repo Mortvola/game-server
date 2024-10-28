@@ -125,9 +125,9 @@ export default class SceneObjectsController {
       if (object) {
         object.merge({
           name: payload.name,
-          modifierNodeId: payload.modifierNodeId,
-          pathId: payload.pathId,
-          modifications: payload.modifications,
+          // modifierNodeId: payload.modifierNodeId,
+          // pathId: payload.pathId,
+          // modifications: payload.modifications,
           components: payload.components,
         })
       } else {
@@ -136,9 +136,9 @@ export default class SceneObjectsController {
         object.fill({
           nodeId: params.nodeId,
           name: payload.name,
-          modifierNodeId: payload.modifierNodeId,
-          pathId: payload.pathId,
-          modifications: payload.modifications,
+          // modifierNodeId: payload.modifierNodeId,
+          // pathId: payload.pathId,
+          // modifications: payload.modifications,
           components: payload.components,
         })
       }

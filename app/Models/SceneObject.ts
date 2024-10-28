@@ -62,10 +62,10 @@ export default class SceneObject extends BaseModel {
   })
   public components: number[]
 
-  @column({
-    prepare: (value: Record<string, unknown>) => JSON.stringify(value),
-  })
-  public modifications: Record<string, unknown>
+  // @column({
+  //   prepare: (value: Record<string, unknown>) => JSON.stringify(value),
+  // })
+  // public modifications: Record<string, unknown>
 
   // @column({
   //   prepare: (value: unknown) => JSON.stringify(value),
@@ -75,9 +75,9 @@ export default class SceneObject extends BaseModel {
   @column()
   public nodeId: number
 
-  @column()
-  public modifierNodeId: number | null
+  // @column()
+  // public modifierNodeId: number | null
 
-  @column()
-  public pathId: number | null
+  // @column()
+  // public pathId: number | null
 }
