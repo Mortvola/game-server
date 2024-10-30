@@ -17,7 +17,6 @@ type AddedNode = {
 
 export type TreeNodeDescriptor2 = {
   id: number,
-  parentNodeId?: number,
   rootNodeId?: number,
   modifierNodeId?: number,
   children?: number[],
@@ -48,25 +47,25 @@ export type NodesResponse2 = {
 }
 
 export const cyclicCheck = async (node: TreeNode, trx: TransactionClientContract) => {
-  let child: TreeNode | null = node
+  // let child: TreeNode | null = node
 
-  while (child) {
-    let parentNode: TreeNode | null = null
+  // while (child) {
+  //   let parentNode: TreeNode | null = null
 
-    if (child.modifierNodeId !== null) {
-      parentNode = await TreeNode.findOrFail(child.modifierNodeId, { client: trx })
-    }
+  //   if (child.modifierNodeId !== null) {
+  //     parentNode = await TreeNode.findOrFail(child.modifierNodeId, { client: trx })
+  //   }
 
-    if (child.parentNodeId !== null) {
-      parentNode = await TreeNode.findOrFail(child.parentNodeId, { client: trx })
-    }
+  //   if (child.parentNodeId !== null) {
+  //     parentNode = await TreeNode.findOrFail(child.parentNodeId, { client: trx })
+  //   }
 
-    if (parentNode?.id === node.id) {
-      return true
-    }
+  //   if (parentNode?.id === node.id) {
+  //     return true
+  //   }
 
-    child = parentNode
-  }
+  //   child = parentNode
+  // }
 
   return false
 }
@@ -81,13 +80,6 @@ export const getTreeDescriptor = async (
 
   let stack: StackEntry[] = [start]
 
-  // type NodeEntry = {
-  //   node: TreeNode,
-  //   children?: number[];
-  //   addedNodes?: AddedNode[],
-  //   modifications?: NodeModification[],
-  // }
-
   const nodes: Map<number, TreeNodeDescriptor2> = new Map()
   const objects: Map<number, SceneObjectDescriptor2[]> = new Map()
   const components: Map<number, ComponentDescriptor> = new Map()
@@ -99,7 +91,7 @@ export const getTreeDescriptor = async (
     if (node.rootNodeId === null) {
       const children = await TreeNode.query({ client: trx })
         .where('parentNodeId', node.id)
-        .andWhereNull('modifierNodeId')
+        .andWhereNull('modifier_node_id')
 
       // Only push onto the stack nodes that we have not yet seen
       for (const child of children) {
@@ -111,7 +103,6 @@ export const getTreeDescriptor = async (
       if (!nodes.has(node.id)) {
         nodes.set(node.id, {
           id: node.id,
-          parentNodeId: node.parentNodeId ?? undefined,
           children: children?.map((child) => child.id),
         })
       }
@@ -124,8 +115,11 @@ export const getTreeDescriptor = async (
         stack.push(root)
       }
 
+      const mods = await NodeModification.query({ client: trx })
+        .where('modifierNodeId', node.id)
+
       const addedNodes = await TreeNode.query({ client: trx })
-        .andWhere('modifierNodeId', node.id)
+        .whereIn('id', [...mods.flatMap((mod) => mod.addedNodes)])
 
       // Only push onto the stack nodes that we have not yet seen
       for (const added of addedNodes) {
@@ -135,19 +129,9 @@ export const getTreeDescriptor = async (
       }
 
       if (!nodes.has(node.id)) {
-        const mods = await NodeModification.query({ client: trx })
-          .where('modifierNodeId', node.id)
-
         nodes.set(node.id, {
           id: node.id,
-          parentNodeId: node.parentNodeId ?? undefined,
           rootNodeId: node.rootNodeId ?? undefined,
-
-          addedNodes: addedNodes?.map((addedNode) => ({
-            nodeId: addedNode.id,
-            parentNodeId: addedNode.parentNodeId ?? 0,
-            pathId: addedNode.pathId ?? 0,
-          })),
           modifications: mods,
         })
       }
@@ -197,14 +181,6 @@ export const getTreeDescriptor = async (
   return {
     rootNodeId,
     nodes: Array.from(nodes.values()),
-    // .map((node) => ({
-    //   id: node.node.id,
-    //   parentNodeId: node.node.parentNodeId ?? undefined,
-    //   rootNodeId: node.node.rootNodeId ?? undefined,
-    //   modifierNodeId: node.node.modifierNodeId ?? undefined,
-    //   children: node.children,
-    //   addedNodes: node.addedNodes,
-    // })),
     objects: Array.from(objects.values()).flatMap((obj) => obj),
     components: Array.from(components.values()),
   }
@@ -213,9 +189,9 @@ export const getTreeDescriptor = async (
 export const createTree = async (
   rootNodeId: number,
   parentNodeId: number | null,
-  modifierNodeId: number | undefined,
-  path: number[] | undefined,
-  pathId: number | undefined,
+  // modifierNodeId: number | undefined,
+  // path: number[] | undefined,
+  // pathId: number | undefined,
   trx: TransactionClientContract,
 ) => {
   const root = new TreeNode()
@@ -223,9 +199,9 @@ export const createTree = async (
     .fill({
       parentNodeId,
       rootNodeId,
-      modifierNodeId,
-      path,
-      pathId,
+      // modifierNodeId,
+      // path,
+      // pathId,
     })
 
   await root.save()
@@ -252,7 +228,7 @@ export const deleteTree = async (rootNode: TreeNode, trx: TransactionClientContr
     // Also, don't delete the root node of modifier nodes.
     const children = await TreeNode.query({ client: trx })
       .where('parentNodeId', node.id)
-      .whereNull('modifierNodeId')
+      .whereNull('modifier_node_id')
 
     // Only push children onto the stack if they are
     // not in the map and not already on the stack

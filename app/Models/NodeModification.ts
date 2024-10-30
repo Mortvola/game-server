@@ -24,4 +24,9 @@ export default class NodeModification extends BaseModel {
     prepare: (value: Record<string, unknown>) => JSON.stringify(value),
   })
   public modifications: Record<string, unknown>
+
+  @column({
+    prepare: (value: number[]) => JSON.stringify(value),
+  })
+  public addedNodes: number[]
 }

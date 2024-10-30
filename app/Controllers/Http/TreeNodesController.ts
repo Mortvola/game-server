@@ -1,11 +1,12 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
 import FolderItem, { ItemType } from 'App/Models/FolderItem'
+import NodeModification from 'App/Models/NodeModification'
 import SceneObject from 'App/Models/SceneObject'
 import TreeNode from 'App/Models/TreeNode'
 import {
   createTree, cyclicCheck,
-  getTreeDescriptor, NodesResponse2, SceneObjectDescriptor,
+  getTreeDescriptor, NodesResponse2,
 } from 'App/Models/TreeUtils'
 
 export type ItemResponse = {
@@ -41,9 +42,9 @@ export default class TreeNodesController {
         treeDescriptor = await createTree(
           payload.rootNodeId,
           payload.parentNodeId,
-          payload.modifierNodeId,
-          payload.path,
-          payload.pathId,
+          // payload.modifierNodeId,
+          // payload.path,
+          // payload.pathId,
           trx,
         )
       }
@@ -58,7 +59,7 @@ export default class TreeNodesController {
     }
   }
 
-  public async patch ({ request, params }: HttpContextContract): Promise<unknown | undefined> {
+  public async patch ({ request, params }: HttpContextContract): Promise<void> {
     const payload = request.body()
 
     const trx = await Database.transaction()
@@ -66,37 +67,80 @@ export default class TreeNodesController {
     try {
       const node = await TreeNode.findOrFail(params.id, { client: trx })
 
-      let objectDescriptors: SceneObjectDescriptor[] | undefined
+      // let objectDescriptors: SceneObjectDescriptor[] | undefined
 
-      // let parentChanged = false
+      // If there is a previousParent property then that indicates
+      // that there is a change of parent.
+      if (payload.previousParent) {
+        // If there is a modifierNodeId and related properties
+        // then the node is being removed from that node modifier
+        // as an added node.
+        if (
+          payload.previousParent.modifierNodeId !== null
+          && payload.previousParent.nodeId !== null
+          && payload.previousParent.pathId !== null
+        ) {
+          if (payload.previousParent.parentNodeId !== null) {
+            throw new Error('Ambiguous previous parent information')
+          }
 
-      if (payload.parentNodeId !== undefined) {
-        // parentChanged = payload.parentNodeId !== node.parentNodeId
+          const modification = await NodeModification.query({ client: trx })
+            .where('modifierNodeId', payload.previousParent.modifierNodeId)
+            .where('nodeId', payload.previousParent.nodeId)
+            .where('pathId', payload.previousParent.pathId)
+            .firstOrFail()
+
+          if (modification) {
+            const index = modification.addedNodes.findIndex((an) => an === node.id)
+
+            if (index !== -1) {
+              modification.addedNodes = [
+                ...modification.addedNodes.slice(0, index),
+                ...modification.addedNodes.slice(index + 1),
+              ]
+
+              await modification.save()
+            }
+          }
+        }
+
+        // If there is a modifierNodeId and related properties then the
+        // node is being added as an addedNode to a node modifier
+        if (
+          payload.modifierNodeId !== null
+          && payload.nodeId !== null
+          && payload.pathId !== null
+        ) {
+          if (payload.parentNodeId !== null) {
+            throw new Error('Ambiguous parent information')
+          }
+
+          let modification = await NodeModification.query({ client: trx })
+            .where('modifierNodeId', payload.modifierNodeId)
+            .where('nodeId', payload.nodeId)
+            .where('pathId', payload.pathId)
+            .first()
+
+          if (modification) {
+            modification.addedNodes.push(node.id)
+          } else {
+            modification = new NodeModification()
+              .useTransaction(trx)
+              .fill({
+                modifierNodeId: payload.modifierNodeId,
+                nodeId: payload.nodeId,
+                pathId: payload.pathId,
+                addedNodes: [node.id],
+              })
+          }
+
+          await modification.save()
+        }
 
         node.parentNodeId = payload.parentNodeId
+
+        await node.save()
       }
-
-      if (payload.modifierNodeId !== undefined) {
-        node.modifierNodeId = payload.modifierNodeId
-      }
-
-      if (payload.path !== undefined) {
-        node.path = payload.path
-      }
-
-      if (payload.pathId !== undefined) {
-        node.pathId = payload.pathId
-      }
-
-      // Object.keys(obj).forEach((key) => obj[key] === undefined && delete obj[key]);
-
-      // node.merge({
-      //   parentNodeId: payload.parentNodeId,
-      //   parentWrapperId: payload.parentWrapperId,
-      //   name: payload.name,
-      // })
-
-      await node.save()
 
       if (payload.parentNodeId !== undefined) {
         if (await cyclicCheck(node, trx)) {
@@ -104,68 +148,11 @@ export default class TreeNodesController {
         }
       }
 
-      // if (parentChanged && node.parentNodeId !== null) {
-      //   // Find all wrappers above this parental change
-      //   const wrappers: TreeNode[] = []
-
-      //   let stack: number[] = [node.parentNodeId]
-
-      //   while (stack.length > 0) {
-      //     const nodeId = stack[0]
-      //     stack = stack.slice(1)
-
-      //     let n = await TreeNode.findOrFail(nodeId, { client: trx })
-
-      //     if (n.rootNodeId !== null) {
-      //       wrappers.push(n)
-      //     }
-
-      //     if (n.parentNodeId === null) {
-      //       // Find a wrapper node that contains this node
-      //       const wrappers = await TreeNode.query({ client: trx })
-      //         .where('rootNodeId', nodeId)
-
-      //       stack.push(...wrappers.map((w) => w.id))
-      //     } else {
-      //       stack.push(n.parentNodeId)
-      //     }
-      //   }
-
-      //   for (const wrapper of wrappers) {
-      //     const addedNodes = await TreeNode.query({ client: trx })
-      //       .where('parentWrapperId', wrapper.id)
-
-      //     // Compute path IDs
-      //     for (const addedNode of addedNodes) {
-      //       if (addedNode.parentNodeId === null) {
-      //         throw new Error('parent node is null')
-      //       }
-
-      //       const { id, path } = await getPathId(addedNode.parentNodeId, wrapper.id, trx)
-
-      //       if (id !== addedNode.pathId) {
-      //         addedNode.pathId = id
-      //         addedNode.path = path
-
-      //         await addedNode.save()
-      //       }
-      //     }
-      //   }
-      // }
-
-      if (payload.parentNodeId !== undefined) {
-        // if (node.parentWrapperId !== null && node.parentNodeId === payload.parentNodeId) {
-        //   objectDescriptors = await generateOverrideObjects2(params.id, trx)
-        // }
-
-        // objectDescriptors = await generateOverrideObjects2(node.rootNodeId ?? node.id, trx)
-      }
-
       await trx.commit()
 
-      return {
-        objects: objectDescriptors,
-      }
+      // return {
+      //   objects: objectDescriptors,
+      // }
     } catch (error) {
       await trx.rollback()
       console.log(error)
@@ -202,9 +189,9 @@ export default class TreeNodesController {
       const nodesResponse = await createTree(
         node.id,
         node.parentNodeId,
-        payload.modifierNodeId,
-        payload.path,
-        payload.pathId,
+        // payload.modifierNodeId,
+        // payload.path,
+        // payload.pathId,
         trx,
       )
 

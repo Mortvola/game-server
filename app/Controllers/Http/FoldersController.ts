@@ -69,7 +69,7 @@ export default class FoldersController {
           if (treeNode) {
             const sceneObject = await SceneObject.query()
               .where('nodeId', treeNode.id)
-              .whereNull('modifierNodeId')
+              .whereNull('modifier_node_id')
               .first()
 
             item.name = sceneObject?.name ?? 'Unknown'

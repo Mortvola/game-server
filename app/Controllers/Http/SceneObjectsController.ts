@@ -1,5 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
+import NodeModification from 'App/Models/NodeModification'
 import SceneObject from 'App/Models/SceneObject'
 import TreeNode from 'App/Models/TreeNode'
 
@@ -27,16 +28,37 @@ export default class SceneObjectsController {
       })
 
       if (payload.parentNodeId !== undefined) {
-        const node = new TreeNode().useTransaction(trx)
-
-        node.fill({
-          parentNodeId: payload.parentNodeId,
-          modifierNodeId: payload.modifierNodeId,
-          path: payload.path,
-          pathId: payload.pathId,
-        })
+        const node = new TreeNode()
+          .useTransaction(trx)
+          .fill({
+            parentNodeId: payload.parentNodeId,
+          // modifierNodeId: payload.modifierNodeId,
+          // path: payload.path,
+          // pathId: payload.pathId,
+          })
 
         await node.save()
+
+        if (
+          payload.modifierNodeId !== null
+          && payload.nodeId !== null
+          && payload.pathId !== null
+        ) {
+          if (payload.parentNodeId !== null) {
+            throw new Error('Ambiguous parent information')
+          }
+
+          const modification = new NodeModification()
+            .useTransaction(trx)
+            .fill({
+              modifierNodeId: payload.modifierNodeId,
+              nodeId: payload.nodeId,
+              pathId: payload.pathId,
+              addedNodes: [node.id],
+            })
+
+          await modification.save()
+        }
 
         object.nodeId = node.id
       }
