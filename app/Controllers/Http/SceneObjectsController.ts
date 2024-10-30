@@ -27,28 +27,40 @@ export default class SceneObjectsController {
         // },
       })
 
-      if (payload.parentNodeId !== undefined) {
-        const node = new TreeNode()
-          .useTransaction(trx)
-          .fill({
-            parentNodeId: payload.parentNodeId,
-          // modifierNodeId: payload.modifierNodeId,
-          // path: payload.path,
-          // pathId: payload.pathId,
+      const node = new TreeNode()
+        .useTransaction(trx)
+        .fill({
+          parentNodeId: payload.parentNodeId,
+        })
+
+      await node.save()
+
+      if (
+        payload.modifierNodeId !== null
+        && payload.nodeId !== null
+        && payload.pathId !== null
+      ) {
+        if (payload.parentNodeId !== null) {
+          throw new Error('Ambiguous parent information')
+        }
+
+        let modification = await NodeModification.query({ client: trx })
+          .where('modifierNodeId', payload.modifierNodeId)
+          .where('nodeId', payload.nodeId)
+          .where('pathId', payload.pathId)
+          .first()
+
+        if (modification) {
+          modification.merge({
+            addedNodes: [
+              ...new Set([
+                ...modification.addedNodes,
+                node.id,
+              ]),
+            ],
           })
-
-        await node.save()
-
-        if (
-          payload.modifierNodeId !== null
-          && payload.nodeId !== null
-          && payload.pathId !== null
-        ) {
-          if (payload.parentNodeId !== null) {
-            throw new Error('Ambiguous parent information')
-          }
-
-          const modification = new NodeModification()
+        } else {
+          modification = new NodeModification()
             .useTransaction(trx)
             .fill({
               modifierNodeId: payload.modifierNodeId,
@@ -56,12 +68,13 @@ export default class SceneObjectsController {
               pathId: payload.pathId,
               addedNodes: [node.id],
             })
-
-          await modification.save()
         }
 
-        object.nodeId = node.id
+        await modification.save()
       }
+
+      object.nodeId = node.id
+      // }
 
       await object.save()
 

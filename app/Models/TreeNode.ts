@@ -14,17 +14,6 @@ export default class TreeNode extends BaseModel {
   @column()
   public parentNodeId: number | null
 
-  // @column()
-  // public modifierNodeId: number | null
-
   @column()
   public rootNodeId: number | null
-
-  // @column()
-  // public pathId: number | null
-
-  // @column({
-  //   prepare: (value: number[]) => JSON.stringify(value),
-  // })
-  // public path: number[] | null
 }
