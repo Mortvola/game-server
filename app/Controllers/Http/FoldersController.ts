@@ -153,7 +153,7 @@ export default class FoldersController {
             if (treeNode) {
               const sceneObject = await SceneObject.query({ client: trx })
                 .where('nodeId', treeNode.id)
-                .whereNull('modifierNodeId')
+                .whereNull('modifier_node_id')
                 .firstOrFail()
 
               sceneObject.name = name

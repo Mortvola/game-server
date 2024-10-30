@@ -4,7 +4,7 @@ import { schema, rules } from '@ioc:Adonis/Core/Validator'
 import Database from '@ioc:Adonis/Lucid/Database'
 import FolderItem, { ItemType } from 'App/Models/FolderItem'
 import TreeNode from 'App/Models/TreeNode'
-import SceneObject, { ObjectType } from 'App/Models/SceneObject'
+import SceneObject from 'App/Models/SceneObject'
 
 export default class ScenesController {
   public async uploadScene ({ request }: HttpContextContract) {
@@ -25,10 +25,10 @@ export default class ScenesController {
         .useTransaction(trx)
         .fill({
           name: 'root',
-          object: {
-            type: ObjectType.NodeObject,
-            components: [],
-          },
+          // object: {
+          //   type: ObjectType.NodeObject,
+          //   components: [],
+          // },
           nodeId: treeNode.id,
         })
         .save()

@@ -122,7 +122,13 @@ export default class TreeNodesController {
             .first()
 
           if (modification) {
-            modification.addedNodes.push(node.id)
+            // Use a set to remove any duplicates
+            modification.addedNodes = [
+              ...new Set([
+                ...modification.addedNodes,
+                node.id,
+              ]),
+            ]
           } else {
             modification = new NodeModification()
               .useTransaction(trx)

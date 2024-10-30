@@ -158,9 +158,9 @@ export default class SceneObjectsController {
       .where('nodeId', params.nodeId)
 
     if (params.treeId !== undefined) {
-      query.andWhere('modifierNodeId', params.treeId)
+      query.andWhere('modifier_node_id', params.treeId)
     } else {
-      query.andWhereNull('modifierNodeId')
+      query.andWhereNull('modifier_node_id')
     }
 
     const object = await query.firstOrFail()
