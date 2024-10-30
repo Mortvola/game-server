@@ -91,7 +91,6 @@ export const getTreeDescriptor = async (
     if (node.rootNodeId === null) {
       const children = await TreeNode.query({ client: trx })
         .where('parentNodeId', node.id)
-        .andWhereNull('modifier_node_id')
 
       // Only push onto the stack nodes that we have not yet seen
       for (const child of children) {
@@ -227,7 +226,6 @@ export const deleteTree = async (rootNode: TreeNode, trx: TransactionClientContr
     // Also, don't delete the root node of modifier nodes.
     const children = await TreeNode.query({ client: trx })
       .where('parentNodeId', node.id)
-      .whereNull('modifier_node_id')
 
     // Only push children onto the stack if they are
     // not in the map and not already on the stack
