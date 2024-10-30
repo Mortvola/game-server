@@ -14,10 +14,10 @@ export default class NodeModification extends BaseModel {
   @column({ serializeAs: null })
   public modifierNodeId: number | null
 
-  @column()
-  public nodeId: number
+  // @column()
+  // public nodeId: number
 
-  @column()
+  @column({ columnName: 'path_id2' })
   public pathId: number | null
 
   @column({

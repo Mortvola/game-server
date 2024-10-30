@@ -77,7 +77,7 @@ export default class TreeNodesController {
         // as an added node.
         if (
           payload.previousParent.modifierNodeId !== null
-          && payload.previousParent.nodeId !== null
+          // && payload.previousParent.nodeId !== null
           && payload.previousParent.pathId !== null
         ) {
           if (payload.previousParent.parentNodeId !== null) {
@@ -86,7 +86,7 @@ export default class TreeNodesController {
 
           const modification = await NodeModification.query({ client: trx })
             .where('modifierNodeId', payload.previousParent.modifierNodeId)
-            .where('nodeId', payload.previousParent.nodeId)
+            // .where('nodeId', payload.previousParent.nodeId)
             .where('pathId', payload.previousParent.pathId)
             .firstOrFail()
 
@@ -108,7 +108,7 @@ export default class TreeNodesController {
         // node is being added as an addedNode to a node modifier
         if (
           payload.modifierNodeId !== null
-          && payload.nodeId !== null
+          // && payload.nodeId !== null
           && payload.pathId !== null
         ) {
           if (payload.parentNodeId !== null) {
@@ -117,7 +117,7 @@ export default class TreeNodesController {
 
           let modification = await NodeModification.query({ client: trx })
             .where('modifierNodeId', payload.modifierNodeId)
-            .where('nodeId', payload.nodeId)
+            // .where('nodeId', payload.nodeId)
             .where('pathId', payload.pathId)
             .first()
 
@@ -134,7 +134,7 @@ export default class TreeNodesController {
               .useTransaction(trx)
               .fill({
                 modifierNodeId: payload.modifierNodeId,
-                nodeId: payload.nodeId,
+                // nodeId: payload.nodeId,
                 pathId: payload.pathId,
                 addedNodes: [node.id],
               })

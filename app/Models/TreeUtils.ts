@@ -33,10 +33,7 @@ export type ComponentDescriptor = {
 export type SceneObjectDescriptor2 = {
   nodeId: number,
   name?: string,
-  // modifierNodeId?: number,
-  // pathId?: number,
   components: number[],
-  // modifications: Record<string, unknown>,
 }
 
 export type NodesResponse2 = {

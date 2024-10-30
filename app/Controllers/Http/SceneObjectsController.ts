@@ -46,7 +46,7 @@ export default class SceneObjectsController {
 
         let modification = await NodeModification.query({ client: trx })
           .where('modifierNodeId', payload.modifierNodeId)
-          .where('nodeId', payload.nodeId)
+          // .where('nodeId', payload.nodeId)
           .where('pathId', payload.pathId)
           .first()
 
@@ -64,7 +64,7 @@ export default class SceneObjectsController {
             .useTransaction(trx)
             .fill({
               modifierNodeId: payload.modifierNodeId,
-              nodeId: payload.nodeId,
+              // nodeId: payload.nodeId,
               pathId: payload.pathId,
               addedNodes: [node.id],
             })

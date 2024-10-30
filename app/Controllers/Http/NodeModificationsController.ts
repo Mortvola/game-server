@@ -2,13 +2,13 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import NodeModification from 'App/Models/NodeModification'
 
 export default class NodeModificationsController {
-  public async update ({ request, params }: HttpContextContract) {
+  public async update ({ request }: HttpContextContract) {
     const payload = request.body()
 
     if (payload) {
       let mods = await NodeModification.query()
         .where('modifierNodeId', payload.modifierNodeId)
-        .where('nodeId', payload.nodeId)
+        // .where('nodeId', payload.nodeId)
         .where('pathId', payload.pathId)
         .first()
 
@@ -21,7 +21,7 @@ export default class NodeModificationsController {
 
         mods.fill({
           modifierNodeId: payload.modifierNodeId,
-          nodeId: payload.nodeId,
+          // nodeId: payload.nodeId,
           pathId: payload.pathId,
           modifications: payload.modifications,
         })
