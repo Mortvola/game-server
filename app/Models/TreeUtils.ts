@@ -141,7 +141,6 @@ export const getTreeDescriptor = async (
   for (const node of Array.from(nodes.values())) {
     const sceneObjects = await SceneObject.query({ client: trx})
       .where('nodeId', node.id)
-      .whereNull('modifier_node_id')
 
     const o: SceneObjectDescriptor2[] = []
 
@@ -245,7 +244,6 @@ export const deleteTree = async (rootNode: TreeNode, trx: TransactionClientContr
     // Delete any associated scene objects (there should only be 1)
     const objects = await SceneObject.query({ client: trx })
       .where('nodeId', node.id)
-      .whereNull('modifier_node_id')
 
     if (objects.length > 1) {
       console.log(`Warning: ${objects.length} base scene objects found for node: ${node.id} `)

@@ -69,7 +69,6 @@ export default class FoldersController {
           if (treeNode) {
             const sceneObject = await SceneObject.query()
               .where('nodeId', treeNode.id)
-              .whereNull('modifier_node_id')
               .first()
 
             item.name = sceneObject?.name ?? 'Unknown'
@@ -153,7 +152,6 @@ export default class FoldersController {
             if (treeNode) {
               const sceneObject = await SceneObject.query({ client: trx })
                 .where('nodeId', treeNode.id)
-                .whereNull('modifier_node_id')
                 .firstOrFail()
 
               sceneObject.name = name

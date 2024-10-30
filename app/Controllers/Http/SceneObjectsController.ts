@@ -167,16 +167,9 @@ export default class SceneObjectsController {
   }
 
   public async deleteSceneObject ({ params }: HttpContextContract) {
-    const query = SceneObject.query()
+    const object = await SceneObject.query()
       .where('nodeId', params.nodeId)
-
-    if (params.treeId !== undefined) {
-      query.andWhere('modifier_node_id', params.treeId)
-    } else {
-      query.andWhereNull('modifier_node_id')
-    }
-
-    const object = await query.firstOrFail()
+      .first()
 
     if (object) {
       await object.delete()
