@@ -91,7 +91,7 @@ export default class TreeNodesController {
           }
 
           const modification = await NodeModification.query({ client: trx })
-            .where('modifierNodeId', payload.previousParent.modifierNodeId)
+            .where('nodeId', payload.previousParent.modifierNodeId)
             .where('treeId', params.treeId)
             .where('pathId', payload.previousParent.pathId)
             .firstOrFail()
@@ -121,7 +121,7 @@ export default class TreeNodesController {
           }
 
           let modification = await NodeModification.query({ client: trx })
-            .where('modifierNodeId', payload.modifierNodeId)
+            .where('nodeId', payload.modifierNodeId)
             .where('treeId', params.treeId)
             .where('pathId', payload.pathId)
             .first()
@@ -138,7 +138,7 @@ export default class TreeNodesController {
             modification = new NodeModification()
               .useTransaction(trx)
               .fill({
-                modifierNodeId: payload.modifierNodeId,
+                nodeId: payload.modifierNodeId,
                 treeId: params.treeId,
                 pathId: payload.pathId,
                 addedNodes: [node.id],

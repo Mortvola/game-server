@@ -4,17 +4,6 @@ import SceneObject from './SceneObject'
 import Component from './Component'
 import NodeModification from './NodeModification'
 
-export type SceneObjectDescriptor = {
-  nodeId: number,
-  object: unknown,
-}
-
-type AddedNode = {
-  nodeId: number,
-  parentNodeId: number,
-  pathId: number
-}
-
 export type TreeModifierDescriptor = {
   id: number,
   treeId: number,
@@ -42,7 +31,7 @@ export type ComponentDescriptor = {
 
 export type SceneObjectDescriptor2 = {
   id: number,
-  name?: string,
+  name: string,
   components: number[],
 }
 
@@ -142,7 +131,7 @@ export const getTreeDescriptor = async (
       }
 
       const mods = await NodeModification.query({ client: trx })
-        .where('modifierNodeId', node.id)
+        .where('nodeId', node.id)
         .where('treeId', node.treeId)
 
       const addedNodes = await TreeNode.query({ client: trx })
@@ -180,7 +169,7 @@ export const getTreeDescriptor = async (
       for (const sceneObject of sceneObjects) {
         const descriptor: SceneObjectDescriptor2 = {
           id: sceneObject.id,
-          name: sceneObject.name ?? undefined,
+          name: sceneObject.name,
           components: [],
         }
 

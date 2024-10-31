@@ -12,15 +12,12 @@ export default class NodeModification extends BaseModel {
   public updatedAt: DateTime
 
   @column({ serializeAs: null })
-  public modifierNodeId: number | null
+  public nodeId: number | null
 
   @column({ serializeAs: null })
   public treeId: number
 
-  // @column()
-  // public nodeId: number
-
-  @column({ columnName: 'path_id2' })
+  @column()
   public pathId: number | null
 
   @column({

@@ -1,10 +1,6 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
 
-export type SceneData = {
-  tree: number,
-}
-
 export default class Scene extends BaseModel {
   @column({ isPrimary: true })
   public id: number
