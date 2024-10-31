@@ -71,7 +71,6 @@ Route.group(() => {
 
   Route.group(() => {
     Route.post('/:treeId', 'SceneObjectsController.uploadSceneObject')
-    Route.delete('/:id', 'SceneObjectsController.deleteSceneObject')
     Route.patch('/:id', 'SceneObjectsController.updateSceneObject')
   }).prefix('/scene-objects')
 

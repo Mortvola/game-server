@@ -90,38 +90,6 @@ export default class SceneObjectsController {
     }
   }
 
-  public async getSceneObject ({ params }: HttpContextContract) {
-    const object = await SceneObject.findOrFail(params.id)
-
-    // const oldObject = object.object as {
-    //   modelId: number,
-    //   materials: unknown,
-    //   items?: unknown[],
-    //   x?: number,
-    //   y?: number,
-    //   width?: number,
-    //   height?: number,
-    // }
-
-    // if (oldObject.modelId !== undefined) {
-    //   const newObject: {
-    //     items: unknown[],
-    //   } = {
-    //     items: [],
-    //   }
-
-    //   newObject.items.push({ item: { id: oldObject.modelId, materials: oldObject.materials }, type: 'model' })
-
-    //   object.object = newObject
-    // } else if (oldObject.x !== undefined && oldObject.y !== undefined) {
-    //   object.object = { ...oldObject }
-    // } else if (oldObject.items === undefined) {
-    //   object.object = { items: [] }
-    // }
-
-    return object
-  }
-
   public async updateSceneObject ({ request, params }: HttpContextContract) {
     const payload = request.body()
 
@@ -134,14 +102,6 @@ export default class SceneObjectsController {
       })
 
       await object.save()
-    }
-  }
-
-  public async deleteSceneObject ({ params }: HttpContextContract) {
-    const object = await SceneObject.find(params.id)
-
-    if (object) {
-      await object.delete()
     }
   }
 
