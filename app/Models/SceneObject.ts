@@ -61,10 +61,4 @@ export default class SceneObject extends BaseModel {
     prepare: (value: number[]) => JSON.stringify(value),
   })
   public components: number[]
-
-  @column()
-  public nodeId: number
-
-  @column()
-  public treeId: number
 }

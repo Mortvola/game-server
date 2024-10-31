@@ -26,8 +26,13 @@ export type TreeModifierDescriptor = {
 export type TreeNodeDescriptor2 = {
   id: number,
   treeId: number,
+  sceneObjectId: number,
   children?: number[],
 }
+
+const isTreeNodeDescriptor = (r: unknown): r is TreeNodeDescriptor2 => (
+  (r as TreeNodeDescriptor2)?.sceneObjectId !== undefined
+)
 
 export type ComponentDescriptor = {
   id: number,
@@ -36,8 +41,7 @@ export type ComponentDescriptor = {
 }
 
 export type SceneObjectDescriptor2 = {
-  nodeId: number,
-  treeId: number,
+  id: number,
   name?: string,
   components: number[],
 }
@@ -98,7 +102,7 @@ export const getTreeDescriptor = async (
     if (node.rootNodeId === null) {
       const children = await TreeNode.query({ client: trx })
         .where('parentNodeId', node.id)
-        .where('tree_id', node.treeId)
+        .where('treeId', node.treeId)
 
       // Only push onto the stack nodes that we have not yet seen
       for (const child of children) {
@@ -107,9 +111,14 @@ export const getTreeDescriptor = async (
         }
       }
 
+      if (node.sceneObjectId === null) {
+        throw new Error('sceneObjectId is null')
+      }
+
       const descriptor: TreeNodeDescriptor2 = {
         id: node.id,
         treeId: node.treeId,
+        sceneObjectId: node.sceneObjectId,
         children: children?.map((child) => child.id),
       }
 
@@ -162,41 +171,41 @@ export const getTreeDescriptor = async (
   }
 
   for (const node of Array.from(nodes.values())) {
-    const sceneObjects = await SceneObject.query({ client: trx})
-      .where('nodeId', node.id)
-      .where('treeId', node.treeId)
+    if (isTreeNodeDescriptor(node) && node.sceneObjectId !== null) {
+      const sceneObjects = await SceneObject.query({ client: trx})
+        .where('id', node.sceneObjectId)
 
-    const o: SceneObjectDescriptor2[] = []
+      const o: SceneObjectDescriptor2[] = []
 
-    for (const sceneObject of sceneObjects) {
-      const descriptor: SceneObjectDescriptor2 = {
-        nodeId: sceneObject.nodeId,
-        treeId: sceneObject.treeId,
-        name: sceneObject.name ?? undefined,
-        components: [],
-      }
-
-      for (const compId of sceneObject.components) {
-        const component = await Component.find(compId)
-
-        if (component) {
-          components.set(
-            component.id,
-            {
-              id: component.id,
-              type: component.type,
-              props: component.props,
-            },
-          )
-
-          descriptor.components.push(component.id)
+      for (const sceneObject of sceneObjects) {
+        const descriptor: SceneObjectDescriptor2 = {
+          id: sceneObject.id,
+          name: sceneObject.name ?? undefined,
+          components: [],
         }
+
+        for (const compId of sceneObject.components) {
+          const component = await Component.find(compId)
+
+          if (component) {
+            components.set(
+              component.id,
+              {
+                id: component.id,
+                type: component.type,
+                props: component.props,
+              },
+            )
+
+            descriptor.components.push(component.id)
+          }
+        }
+
+        o.push(descriptor)
       }
 
-      o.push(descriptor)
+      objects.set(node.id, o)
     }
-
-    objects.set(node.id, o)
   }
 
   return {

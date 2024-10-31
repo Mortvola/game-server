@@ -3,7 +3,7 @@ import Database from '@ioc:Adonis/Lucid/Database'
 import NodeModification from 'App/Models/NodeModification'
 import SceneObject from 'App/Models/SceneObject'
 import TreeNode from 'App/Models/TreeNode'
-import { getUniqueId } from 'App/Models/TreeUtils'
+import { getTreeDescriptor, getUniqueId } from 'App/Models/TreeUtils'
 
 export default class SceneObjectsController {
   public async uploadSceneObject ({ request, params }: HttpContextContract) {
@@ -28,12 +28,15 @@ export default class SceneObjectsController {
         // },
       })
 
+      await object.save()
+
       const node = new TreeNode()
         .useTransaction(trx)
         .fill({
           id: await getUniqueId(payload.modifierNodeId ?? payload.parentNodeId),
           treeId: params.treeId,
           parentNodeId: payload.parentNodeId,
+          sceneObjectId: object.id,
         })
 
       await node.save()
@@ -75,14 +78,11 @@ export default class SceneObjectsController {
         await modification.save()
       }
 
-      object.nodeId = node.id
-      object.treeId = params.treeId
-
-      await object.save()
+      const response = await getTreeDescriptor(node.id, node.treeId, trx)
 
       await trx.commit()
 
-      return object
+      return response
     } catch (error) {
       await trx.rollback()
       console.log(error)
@@ -126,31 +126,19 @@ export default class SceneObjectsController {
     const payload = request.body()
 
     if (payload) {
-      let object = await SceneObject.findBy('nodeId', params.nodeId)
+      let object = await SceneObject.findOrFail(params.id)
 
-      if (object) {
-        object.merge({
-          name: payload.name,
-          components: payload.components,
-        })
-      } else {
-        object = new SceneObject()
-
-        object.fill({
-          nodeId: params.nodeId,
-          name: payload.name,
-          components: payload.components,
-        })
-      }
+      object.merge({
+        name: payload.name,
+        components: payload.components,
+      })
 
       await object.save()
     }
   }
 
   public async deleteSceneObject ({ params }: HttpContextContract) {
-    const object = await SceneObject.query()
-      .where('nodeId', params.nodeId)
-      .first()
+    const object = await SceneObject.find(params.id)
 
     if (object) {
       await object.delete()

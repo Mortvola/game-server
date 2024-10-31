@@ -66,9 +66,9 @@ export default class FoldersController {
         case ItemType.TreeNode:
           const treeNode = await TreeNode.find(item.itemId)
 
-          if (treeNode) {
+          if (treeNode && treeNode.sceneObjectId !== null) {
             const sceneObject = await SceneObject.query()
-              .where('nodeId', treeNode.id)
+              .where('id', treeNode.sceneObjectId)
               .first()
 
             item.name = sceneObject?.name ?? 'Unknown'
@@ -149,9 +149,9 @@ export default class FoldersController {
           case ItemType.TreeNode: {
             const treeNode = await TreeNode.findOrFail(item.itemId, { client: trx })
 
-            if (treeNode) {
+            if (treeNode && treeNode.sceneObjectId !== null) {
               const sceneObject = await SceneObject.query({ client: trx })
-                .where('nodeId', treeNode.id)
+                .where('id', treeNode.sceneObjectId)
                 .firstOrFail()
 
               sceneObject.name = name

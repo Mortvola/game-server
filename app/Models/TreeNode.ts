@@ -18,6 +18,9 @@ export default class TreeNode extends BaseModel {
   public parentNodeId: number | null
 
   @column()
+  public sceneObjectId: number | null
+
+  @column()
   public rootNodeId: number | null
 
   @column()

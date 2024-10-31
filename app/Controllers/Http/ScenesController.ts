@@ -18,14 +18,7 @@ export default class ScenesController {
     const trx = await Database.transaction()
 
     try {
-      const treeNode = await new TreeNode()
-        .useTransaction(trx)
-        .fill({
-          id: await getUniqueId(),
-        })
-        .save()
-
-      await new SceneObject()
+      const object = await new SceneObject()
         .useTransaction(trx)
         .fill({
           name: 'root',
@@ -33,7 +26,15 @@ export default class ScenesController {
           //   type: ObjectType.NodeObject,
           //   components: [],
           // },
-          nodeId: treeNode.id,
+          // nodeId: treeNode.id,
+        })
+        .save()
+
+      const treeNode = await new TreeNode()
+        .useTransaction(trx)
+        .fill({
+          id: await getUniqueId(),
+          sceneObjectId: object.id,
         })
         .save()
 
@@ -42,6 +43,7 @@ export default class ScenesController {
         .fill({
           name: requestData.name,
           rootNodeId: treeNode.id,
+          rootTreeId: treeNode.treeId,
         })
         .save()
 
