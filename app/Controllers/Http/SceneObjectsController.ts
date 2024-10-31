@@ -3,9 +3,10 @@ import Database from '@ioc:Adonis/Lucid/Database'
 import NodeModification from 'App/Models/NodeModification'
 import SceneObject from 'App/Models/SceneObject'
 import TreeNode from 'App/Models/TreeNode'
+import { getUniqueId } from 'App/Models/TreeUtils'
 
 export default class SceneObjectsController {
-  public async uploadSceneObject ({ request }: HttpContextContract) {
+  public async uploadSceneObject ({ request, params }: HttpContextContract) {
     const trx = await Database.transaction()
     try {
       const object = new SceneObject().useTransaction(trx)
@@ -30,6 +31,8 @@ export default class SceneObjectsController {
       const node = new TreeNode()
         .useTransaction(trx)
         .fill({
+          id: await getUniqueId(payload.modifierNodeId ?? payload.parentNodeId),
+          treeId: params.treeId,
           parentNodeId: payload.parentNodeId,
         })
 
@@ -37,7 +40,6 @@ export default class SceneObjectsController {
 
       if (
         payload.modifierNodeId !== null
-        && payload.nodeId !== null
         && payload.pathId !== null
       ) {
         if (payload.parentNodeId !== null) {
@@ -46,7 +48,7 @@ export default class SceneObjectsController {
 
         let modification = await NodeModification.query({ client: trx })
           .where('modifierNodeId', payload.modifierNodeId)
-          // .where('nodeId', payload.nodeId)
+          .where('treeId', params.treeId)
           .where('pathId', payload.pathId)
           .first()
 
@@ -64,7 +66,7 @@ export default class SceneObjectsController {
             .useTransaction(trx)
             .fill({
               modifierNodeId: payload.modifierNodeId,
-              // nodeId: payload.nodeId,
+              treeId: params.treeId,
               pathId: payload.pathId,
               addedNodes: [node.id],
             })
@@ -74,30 +76,9 @@ export default class SceneObjectsController {
       }
 
       object.nodeId = node.id
-      // }
+      object.treeId = params.treeId
 
       await object.save()
-
-      // let parentId = request.qs().parentId
-
-      // if (parentId) {
-      //   parentId = parseInt(parentId)
-
-      //   if (isNaN(parentId)) {
-      //     parentId = null
-      //   }
-      // }
-
-      // const folder = new FolderItem().useTransaction(trx)
-
-      // folder.fill({
-      //   name: object.name,
-      //   itemId: object.id,
-      //   parentId,
-      //   type: 'object',
-      // })
-
-      // await folder.save()
 
       await trx.commit()
 

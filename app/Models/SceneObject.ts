@@ -64,4 +64,7 @@ export default class SceneObject extends BaseModel {
 
   @column()
   public nodeId: number
+
+  @column()
+  public treeId: number
 }

@@ -5,6 +5,9 @@ export default class TreeNode extends BaseModel {
   @column({ isPrimary: true })
   public id: number
 
+  @column()
+  public treeId: number
+
   @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime
 
@@ -16,4 +19,7 @@ export default class TreeNode extends BaseModel {
 
   @column()
   public rootNodeId: number | null
+
+  @column()
+  public rootTreeId: number | null
 }

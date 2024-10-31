@@ -14,6 +14,9 @@ export default class NodeModification extends BaseModel {
   @column({ serializeAs: null })
   public modifierNodeId: number | null
 
+  @column({ serializeAs: null })
+  public treeId: number
+
   // @column()
   // public nodeId: number
 

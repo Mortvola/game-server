@@ -20,4 +20,7 @@ export default class Scene extends BaseModel {
 
   @column()
   public rootNodeId: number
+
+  @column()
+  public rootTreeId: number
 }

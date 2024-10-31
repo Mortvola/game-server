@@ -15,13 +15,18 @@ type AddedNode = {
   pathId: number
 }
 
+export type TreeModifierDescriptor = {
+  id: number,
+  treeId: number,
+  rootNodeId: number,
+  rootTreeId: number,
+  modifications?: NodeModification[],
+}
+
 export type TreeNodeDescriptor2 = {
   id: number,
-  rootNodeId?: number,
-  modifierNodeId?: number,
+  treeId: number,
   children?: number[],
-  addedNodes?: AddedNode[],
-  modifications?: NodeModification[],
 }
 
 export type ComponentDescriptor = {
@@ -32,13 +37,14 @@ export type ComponentDescriptor = {
 
 export type SceneObjectDescriptor2 = {
   nodeId: number,
+  treeId: number,
   name?: string,
   components: number[],
 }
 
 export type NodesResponse2 = {
   rootNodeId: number,
-  nodes: TreeNodeDescriptor2[],
+  nodes: (TreeNodeDescriptor2 | TreeModifierDescriptor)[],
   objects: SceneObjectDescriptor2[],
   components: ComponentDescriptor[],
 }
@@ -69,15 +75,19 @@ export const cyclicCheck = async (node: TreeNode, trx: TransactionClientContract
 
 export const getTreeDescriptor = async (
   rootNodeId: number,
+  rootTreeId: number,
   trx: TransactionClientContract
 ): Promise<NodesResponse2> => {
   type StackEntry = TreeNode
 
-  const start = await TreeNode.findOrFail(rootNodeId, { client: trx })
+  const start = await TreeNode.query({ client: trx })
+    .where('id', rootNodeId)
+    .where('treeId', rootTreeId)
+    .firstOrFail()
 
   let stack: StackEntry[] = [start]
 
-  const nodes: Map<number, TreeNodeDescriptor2> = new Map()
+  const nodes: Map<number, TreeNodeDescriptor2 | TreeModifierDescriptor> = new Map()
   const objects: Map<number, SceneObjectDescriptor2[]> = new Map()
   const components: Map<number, ComponentDescriptor> = new Map()
 
@@ -88,6 +98,7 @@ export const getTreeDescriptor = async (
     if (node.rootNodeId === null) {
       const children = await TreeNode.query({ client: trx })
         .where('parentNodeId', node.id)
+        .where('tree_id', node.treeId)
 
       // Only push onto the stack nodes that we have not yet seen
       for (const child of children) {
@@ -96,15 +107,25 @@ export const getTreeDescriptor = async (
         }
       }
 
+      const descriptor: TreeNodeDescriptor2 = {
+        id: node.id,
+        treeId: node.treeId,
+        children: children?.map((child) => child.id),
+      }
+
       if (!nodes.has(node.id)) {
-        nodes.set(node.id, {
-          id: node.id,
-          children: children?.map((child) => child.id),
-        })
+        nodes.set(node.id, descriptor)
       }
     } else {
+      if (node.rootTreeId === null) {
+        throw new Error('rootTreeId is not set')
+      }
+
       // This is a modifier node.
-      const root = await TreeNode.findOrFail(node.rootNodeId, { client: trx })
+      const root = await TreeNode.query({ client: trx })
+        .where('id', node.rootNodeId)
+        .where('treeId', node.rootTreeId)
+        .firstOrFail()
 
       // Only push onto the stack nodes that we have not yet seen
       if (!nodes.has(root.id) && !stack.some((n) => n.id === root.id)) {
@@ -113,9 +134,11 @@ export const getTreeDescriptor = async (
 
       const mods = await NodeModification.query({ client: trx })
         .where('modifierNodeId', node.id)
+        .where('treeId', node.treeId)
 
       const addedNodes = await TreeNode.query({ client: trx })
         .whereIn('id', [...mods.flatMap((mod) => mod.addedNodes)])
+        .where('treeId', node.treeId)
 
       // Only push onto the stack nodes that we have not yet seen
       for (const added of addedNodes) {
@@ -124,12 +147,16 @@ export const getTreeDescriptor = async (
         }
       }
 
+      const descriptor: TreeModifierDescriptor = {
+        id: node.id,
+        treeId: node.treeId,
+        rootNodeId: node.rootNodeId ?? undefined,
+        rootTreeId: node.rootTreeId ?? undefined,
+        modifications: mods,
+      }
+
       if (!nodes.has(node.id)) {
-        nodes.set(node.id, {
-          id: node.id,
-          rootNodeId: node.rootNodeId ?? undefined,
-          modifications: mods,
-        })
+        nodes.set(node.id, descriptor)
       }
     }
   }
@@ -137,17 +164,16 @@ export const getTreeDescriptor = async (
   for (const node of Array.from(nodes.values())) {
     const sceneObjects = await SceneObject.query({ client: trx})
       .where('nodeId', node.id)
+      .where('treeId', node.treeId)
 
     const o: SceneObjectDescriptor2[] = []
 
     for (const sceneObject of sceneObjects) {
       const descriptor: SceneObjectDescriptor2 = {
         nodeId: sceneObject.nodeId,
+        treeId: sceneObject.treeId,
         name: sceneObject.name ?? undefined,
-        // modifierNodeId: sceneObject.modifierNodeId ?? undefined,
-        // pathId: sceneObject.pathId ?? undefined,
         components: [],
-        // modifications: sceneObject.modifications,
       }
 
       for (const compId of sceneObject.components) {
@@ -192,6 +218,7 @@ export const createTree = async (
   const root = new TreeNode()
     .useTransaction(trx)
     .fill({
+      id: await getUniqueId(),
       parentNodeId,
       rootNodeId,
       // modifierNodeId,
@@ -201,7 +228,7 @@ export const createTree = async (
 
   await root.save()
 
-  return getTreeDescriptor(root.id, trx)
+  return getTreeDescriptor(root.id, root.treeId, trx)
 }
 
 export const deleteTree = async (rootNode: TreeNode, trx: TransactionClientContract) => {
@@ -250,4 +277,42 @@ export const deleteTree = async (rootNode: TreeNode, trx: TransactionClientContr
 
     await node.delete()
   }
+}
+
+export const getUniqueId = async (nodeId: number | null = null): Promise<number> => {
+  let uniqueId = Math.trunc(Math.random() * 2147483647)
+
+  // if (nodeId !== null) {
+  //   // Find the root of the tree that contains the node with id nodeID.
+  //   let root = await TreeNode.findOrFail(nodeId)
+
+  //   while (root.parentNodeId !== null) {
+  //     root = await TreeNode.findOrFail(root.parentNodeId)
+  //   }
+
+  //   let stack: TreeNode[] = [root]
+  //   const idSet: Set<number> = new Set()
+
+  //   while (stack.length > 0) {
+  //     const node = stack[0]
+  //     stack = stack.slice(1)
+
+  //     if (node.id === uniqueId) {
+  //       // The unique ID conflicts with the current node.
+  //       // Generate a new ID until we find one that is not
+  //       // found in the set
+  //       do {
+  //         uniqueId = Math.trunc(Math.random() * 4294967295)
+  //       } while (idSet.has(uniqueId) || node.id === uniqueId)
+  //     }
+
+  //     idSet.add(node.id)
+
+  //     const children = await TreeNode.query().where('parentNodeId', node.id)
+
+  //     stack.push(...children)
+  //   }
+  // }
+
+  return uniqueId
 }

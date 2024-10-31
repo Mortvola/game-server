@@ -5,6 +5,7 @@ import Database from '@ioc:Adonis/Lucid/Database'
 import FolderItem, { ItemType } from 'App/Models/FolderItem'
 import TreeNode from 'App/Models/TreeNode'
 import SceneObject from 'App/Models/SceneObject'
+import { getUniqueId } from 'App/Models/TreeUtils'
 
 export default class ScenesController {
   public async uploadScene ({ request }: HttpContextContract) {
@@ -19,6 +20,9 @@ export default class ScenesController {
     try {
       const treeNode = await new TreeNode()
         .useTransaction(trx)
+        .fill({
+          id: await getUniqueId(),
+        })
         .save()
 
       await new SceneObject()

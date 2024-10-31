@@ -18,7 +18,11 @@ export default class TreeNodesController {
     const trx = await Database.transaction()
 
     try {
-      const descriptor = await getTreeDescriptor(parseInt(params.id, 10), trx)
+      const descriptor = await getTreeDescriptor(
+        parseInt(params.id, 10),
+        parseInt(params.treeId, 10),
+        trx,
+      )
 
       trx.commit()
 
@@ -65,7 +69,10 @@ export default class TreeNodesController {
     const trx = await Database.transaction()
 
     try {
-      const node = await TreeNode.findOrFail(params.id, { client: trx })
+      const node = await TreeNode.query({ client: trx })
+        .where('id', params.id)
+        .where('treeId', params.treeId)
+        .firstOrFail()
 
       // let objectDescriptors: SceneObjectDescriptor[] | undefined
 
@@ -77,7 +84,6 @@ export default class TreeNodesController {
         // as an added node.
         if (
           payload.previousParent.modifierNodeId !== null
-          // && payload.previousParent.nodeId !== null
           && payload.previousParent.pathId !== null
         ) {
           if (payload.previousParent.parentNodeId !== null) {
@@ -86,7 +92,7 @@ export default class TreeNodesController {
 
           const modification = await NodeModification.query({ client: trx })
             .where('modifierNodeId', payload.previousParent.modifierNodeId)
-            // .where('nodeId', payload.previousParent.nodeId)
+            .where('treeId', params.treeId)
             .where('pathId', payload.previousParent.pathId)
             .firstOrFail()
 
@@ -108,7 +114,6 @@ export default class TreeNodesController {
         // node is being added as an addedNode to a node modifier
         if (
           payload.modifierNodeId !== null
-          // && payload.nodeId !== null
           && payload.pathId !== null
         ) {
           if (payload.parentNodeId !== null) {
@@ -117,7 +122,7 @@ export default class TreeNodesController {
 
           let modification = await NodeModification.query({ client: trx })
             .where('modifierNodeId', payload.modifierNodeId)
-            // .where('nodeId', payload.nodeId)
+            .where('treeId', params.treeId)
             .where('pathId', payload.pathId)
             .first()
 
@@ -134,7 +139,7 @@ export default class TreeNodesController {
               .useTransaction(trx)
               .fill({
                 modifierNodeId: payload.modifierNodeId,
-                // nodeId: payload.nodeId,
+                treeId: params.treeId,
                 pathId: payload.pathId,
                 addedNodes: [node.id],
               })
@@ -222,10 +227,16 @@ export default class TreeNodesController {
     const trx = await Database.transaction()
 
     try {
-      const node = await TreeNode.find(params.id, { client: trx })
+      const node = await TreeNode.query({ client: trx })
+        .where('id', params.id)
+        .where('treeId', params.treeId)
+        .first()
 
       if (node) {
-        const object = await SceneObject.findBy('nodeId', node.id, { client: trx })
+        const object = await SceneObject.query({ client: trx })
+          .where('nodeId', node.id)
+          .where('treeId', node.treeId)
+          .first()
 
         if (object) {
           await object.delete()
