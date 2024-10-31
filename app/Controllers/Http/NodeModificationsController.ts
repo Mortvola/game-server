@@ -14,7 +14,7 @@ export default class NodeModificationsController {
 
       if (mods) {
         mods.merge({
-          modifications: payload.modifications,
+          sceneObject: payload.modifications,
         })
       } else {
         mods = new NodeModification()
@@ -23,7 +23,7 @@ export default class NodeModificationsController {
           nodeId: payload.modifierNodeId,
           treeId: payload.treeId,
           pathId: payload.pathId,
-          modifications: payload.modifications,
+          sceneObject: payload.modifications,
         })
       }
 

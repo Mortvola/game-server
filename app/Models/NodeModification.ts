@@ -23,7 +23,7 @@ export default class NodeModification extends BaseModel {
   @column({
     prepare: (value: Record<string, unknown>) => JSON.stringify(value),
   })
-  public modifications: Record<string, unknown>
+  public sceneObject: Record<string, unknown>
 
   @column({
     prepare: (value: number[]) => JSON.stringify(value),
