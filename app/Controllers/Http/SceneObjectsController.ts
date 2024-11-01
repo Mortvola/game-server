@@ -1,5 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
+import Component from 'App/Models/Component'
 import NodeModification from 'App/Models/NodeModification'
 import SceneObject from 'App/Models/SceneObject'
 import TreeNode from 'App/Models/TreeNode'
@@ -13,19 +14,35 @@ export default class SceneObjectsController {
 
       const payload = request.body()
 
+      const transform = new Component().useTransaction(trx)
+        .fill({
+          type: 'Transform',
+          props: {
+            translate: [0, 0, 0],
+            rotate: [0, 0, 0],
+            scale: [1, 1, 1],
+          },
+        })
+
+      await transform.save()
+
+      const components: number[] = [transform.id]
+
+      if (payload.component) {
+        const component = new Component().useTransaction(trx)
+          .fill({
+            type: payload.component.type,
+            props: payload.component.props,
+          })
+
+        await component.save()
+
+        components.push(component.id)
+      }
+
       object.fill({
         name: payload.name,
-        // object: {
-        //   type: 'object',
-        //   components: payload.component
-        //     ? [{ id: 0, type: payload.component.type, props: payload.component.props }]
-        //     : [],
-        //   transformProps: {
-        //     translate: [0, 0, 0],
-        //     rotate: [0, 0, 0],
-        //     scale: [1, 1, 1],
-        //   },
-        // },
+        components,
       })
 
       await object.save()

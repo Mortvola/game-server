@@ -1,5 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
+import Component from 'App/Models/Component'
 import FolderItem, { ItemType } from 'App/Models/FolderItem'
 import NodeModification from 'App/Models/NodeModification'
 import SceneObject from 'App/Models/SceneObject'
@@ -233,13 +234,26 @@ export default class TreeNodesController {
         .first()
 
       if (node) {
-        const object = await SceneObject.query({ client: trx })
-          .where('nodeId', node.id)
-          .where('treeId', node.treeId)
-          .first()
+        const object = await SceneObject.find(node.sceneObjectId)
 
         if (object) {
+          for (const compId of object.components) {
+            const component = await Component.find(compId)
+
+            if (component) {
+              await component.delete()
+            }
+          }
+
           await object.delete()
+        }
+
+        const modifications = await NodeModification.query({ client: trx })
+          .where('nodeId', node.id)
+          .where('treeId', node.treeId)
+
+        for (const mod of modifications) {
+          await mod.delete()
         }
 
         await node.delete()
