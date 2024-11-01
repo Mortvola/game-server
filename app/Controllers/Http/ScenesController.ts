@@ -43,7 +43,6 @@ export default class ScenesController {
         .fill({
           name: requestData.name,
           rootNodeId: treeNode.id,
-          rootTreeId: treeNode.treeId,
         })
         .save()
 

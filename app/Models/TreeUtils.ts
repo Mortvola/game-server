@@ -75,7 +75,7 @@ export const getTreeDescriptor = async (
 
   const start = await TreeNode.query({ client: trx })
     .where('id', rootNodeId)
-    .where('treeId', rootTreeId)
+    .where('sceneId', rootTreeId)
     .firstOrFail()
 
   let stack: StackEntry[] = [start]
@@ -91,7 +91,7 @@ export const getTreeDescriptor = async (
     if (node.rootNodeId === null) {
       const children = await TreeNode.query({ client: trx })
         .where('parentNodeId', node.id)
-        .where('treeId', node.treeId)
+        .where('sceneId', node.sceneId)
 
       // Only push onto the stack nodes that we have not yet seen
       for (const child of children) {
@@ -106,7 +106,7 @@ export const getTreeDescriptor = async (
 
       const descriptor: TreeNodeDescriptor2 = {
         id: node.id,
-        treeId: node.treeId,
+        treeId: node.sceneId,
         sceneObjectId: node.sceneObjectId,
         children: children?.map((child) => child.id),
       }
@@ -115,14 +115,14 @@ export const getTreeDescriptor = async (
         nodes.set(node.id, descriptor)
       }
     } else {
-      if (node.rootTreeId === null) {
+      if (node.rootSceneId === null) {
         throw new Error('rootTreeId is not set')
       }
 
       // This is a modifier node.
       const root = await TreeNode.query({ client: trx })
         .where('id', node.rootNodeId)
-        .where('treeId', node.rootTreeId)
+        .where('sceneId', node.rootSceneId)
         .firstOrFail()
 
       // Only push onto the stack nodes that we have not yet seen
@@ -132,11 +132,11 @@ export const getTreeDescriptor = async (
 
       const mods = await NodeModification.query({ client: trx })
         .where('nodeId', node.id)
-        .where('treeId', node.treeId)
+        .where('sceneId', node.sceneId)
 
       const addedNodes = await TreeNode.query({ client: trx })
         .whereIn('id', [...mods.flatMap((mod) => mod.addedNodes)])
-        .where('treeId', node.treeId)
+        .where('sceneId', node.sceneId)
 
       // Only push onto the stack nodes that we have not yet seen
       for (const added of addedNodes) {
@@ -147,9 +147,9 @@ export const getTreeDescriptor = async (
 
       const descriptor: TreeModifierDescriptor = {
         id: node.id,
-        treeId: node.treeId,
+        treeId: node.sceneId,
         rootNodeId: node.rootNodeId ?? undefined,
-        rootTreeId: node.rootTreeId ?? undefined,
+        rootTreeId: node.rootSceneId ?? undefined,
         modifications: mods,
       }
 
@@ -226,7 +226,7 @@ export const createTree = async (
 
   await root.save()
 
-  return getTreeDescriptor(root.id, root.treeId, trx)
+  return getTreeDescriptor(root.id, root.sceneId, trx)
 }
 
 export const deleteTree = async (rootNode: TreeNode, trx: TransactionClientContract) => {

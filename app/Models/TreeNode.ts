@@ -6,7 +6,7 @@ export default class TreeNode extends BaseModel {
   public id: number
 
   @column()
-  public treeId: number
+  public sceneId: number
 
   @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime
@@ -24,5 +24,5 @@ export default class TreeNode extends BaseModel {
   public rootNodeId: number | null
 
   @column()
-  public rootTreeId: number | null
+  public rootSceneId: number | null
 }

@@ -15,7 +15,7 @@ export default class NodeModification extends BaseModel {
   public nodeId: number | null
 
   @column({ serializeAs: null })
-  public treeId: number
+  public sceneId: number
 
   @column()
   public pathId: number | null

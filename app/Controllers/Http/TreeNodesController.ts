@@ -72,7 +72,7 @@ export default class TreeNodesController {
     try {
       const node = await TreeNode.query({ client: trx })
         .where('id', params.id)
-        .where('treeId', params.treeId)
+        .where('sceneId', params.treeId)
         .firstOrFail()
 
       // let objectDescriptors: SceneObjectDescriptor[] | undefined
@@ -93,7 +93,7 @@ export default class TreeNodesController {
 
           const modification = await NodeModification.query({ client: trx })
             .where('nodeId', payload.previousParent.modifierNodeId)
-            .where('treeId', params.treeId)
+            .where('sceneId', params.treeId)
             .where('pathId', payload.previousParent.pathId)
             .firstOrFail()
 
@@ -123,7 +123,7 @@ export default class TreeNodesController {
 
           let modification = await NodeModification.query({ client: trx })
             .where('nodeId', payload.modifierNodeId)
-            .where('treeId', params.treeId)
+            .where('sceneId', params.treeId)
             .where('pathId', payload.pathId)
             .first()
 
@@ -140,7 +140,7 @@ export default class TreeNodesController {
               .useTransaction(trx)
               .fill({
                 nodeId: payload.modifierNodeId,
-                treeId: params.treeId,
+                sceneId: params.treeId,
                 pathId: payload.pathId,
                 addedNodes: [node.id],
               })
@@ -230,7 +230,7 @@ export default class TreeNodesController {
     try {
       const node = await TreeNode.query({ client: trx })
         .where('id', params.id)
-        .where('treeId', params.treeId)
+        .where('sceneId', params.treeId)
         .first()
 
       if (node) {
@@ -250,7 +250,7 @@ export default class TreeNodesController {
 
         const modifications = await NodeModification.query({ client: trx })
           .where('nodeId', node.id)
-          .where('treeId', node.treeId)
+          .where('sceneId', node.sceneId)
 
         for (const mod of modifications) {
           await mod.delete()

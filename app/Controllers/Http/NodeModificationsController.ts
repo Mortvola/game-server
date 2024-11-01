@@ -8,7 +8,7 @@ export default class NodeModificationsController {
     if (payload) {
       let mods = await NodeModification.query()
         .where('nodeId', payload.modifierNodeId)
-        .where('treeId', payload.treeId)
+        .where('sceneId', payload.treeId)
         .where('pathId', payload.pathId)
         .first()
 
@@ -21,7 +21,7 @@ export default class NodeModificationsController {
 
         mods.fill({
           nodeId: payload.modifierNodeId,
-          treeId: payload.treeId,
+          sceneId: payload.treeId,
           pathId: payload.pathId,
           sceneObject: payload.modifications,
         })
