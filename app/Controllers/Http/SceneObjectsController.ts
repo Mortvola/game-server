@@ -4,7 +4,7 @@ import Component from 'App/Models/Component'
 import NodeModification from 'App/Models/NodeModification'
 import SceneObject from 'App/Models/SceneObject'
 import TreeNode from 'App/Models/TreeNode'
-import { getTreeDescriptor, getUniqueId } from 'App/Models/TreeUtils'
+import { getTreeDescriptor, getUniqueId, ParentDescriptor, setParent } from 'App/Models/TreeUtils'
 
 export default class SceneObjectsController {
   public async uploadSceneObject ({ request, params }: HttpContextContract) {
@@ -52,48 +52,12 @@ export default class SceneObjectsController {
         .fill({
           id: await getUniqueId(payload.modifierNodeId ?? payload.parentNodeId),
           sceneId: params.sceneId,
-          parentNodeId: payload.parentNodeId,
           sceneObjectId: object.id,
         })
 
+      await setParent(node, payload as ParentDescriptor, trx)
+
       await node.save()
-
-      if (
-        payload.modifierNodeId !== null
-        && payload.pathId !== null
-      ) {
-        if (payload.parentNodeId !== null) {
-          throw new Error('Ambiguous parent information')
-        }
-
-        let modification = await NodeModification.query({ client: trx })
-          .where('nodeId', payload.modifierNodeId)
-          .where('sceneId', params.sceneId)
-          .where('pathId', payload.pathId)
-          .first()
-
-        if (modification) {
-          modification.merge({
-            addedNodes: [
-              ...new Set([
-                ...modification.addedNodes,
-                node.id,
-              ]),
-            ],
-          })
-        } else {
-          modification = new NodeModification()
-            .useTransaction(trx)
-            .fill({
-              nodeId: payload.modifierNodeId,
-              sceneId: params.sceneId,
-              pathId: payload.pathId,
-              addedNodes: [node.id],
-            })
-        }
-
-        await modification.save()
-      }
 
       const response = await getTreeDescriptor(node.id, node.sceneId, trx)
 

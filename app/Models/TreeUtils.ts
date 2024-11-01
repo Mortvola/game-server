@@ -206,27 +206,79 @@ export const getTreeDescriptor = async (
 }
 
 export const createTree = async (
+  sceneId: number,
   rootNodeId: number,
-  parentNodeId: number | null,
-  // modifierNodeId: number | undefined,
-  // path: number[] | undefined,
-  // pathId: number | undefined,
+  rootSceneId: number,
+  parentDescriptor: ParentDescriptor,
   trx: TransactionClientContract,
 ) => {
   const root = new TreeNode()
     .useTransaction(trx)
     .fill({
       id: await getUniqueId(),
-      parentNodeId,
+      sceneId,
       rootNodeId,
-      // modifierNodeId,
-      // path,
-      // pathId,
+      rootSceneId,
     })
 
   await root.save()
 
+  await setParent(root, parentDescriptor, trx)
+
   return getTreeDescriptor(root.id, root.sceneId, trx)
+}
+
+export type ParentDescriptor = {
+  parentNodeId: number | null,
+  modifierNodeId: number | null,
+  pathId: number | null,
+}
+
+export const setParent = async (
+  node: TreeNode,
+  parentDescriptor: ParentDescriptor,
+  trx: TransactionClientContract,
+) => {
+  node.parentNodeId = parentDescriptor.parentNodeId
+
+  await node.save()
+
+  if (
+    parentDescriptor.modifierNodeId !== null
+  && parentDescriptor.pathId !== null
+  ) {
+    if (parentDescriptor.parentNodeId !== null) {
+      throw new Error('Ambiguous parent information')
+    }
+
+    let modification = await NodeModification.query({ client: trx })
+      .where('nodeId', parentDescriptor.modifierNodeId)
+      .where('sceneId', node.sceneId)
+      .where('pathId', parentDescriptor.pathId)
+      .first()
+
+    if (modification) {
+      modification.merge({
+        addedNodes: [
+          ...new Set([
+            ...modification.addedNodes,
+            node.id,
+          ]),
+        ],
+      })
+    } else {
+      modification = new NodeModification()
+        .useTransaction(trx)
+        .fill({
+          nodeId: parentDescriptor.modifierNodeId,
+          sceneId: node.sceneId,
+          pathId: parentDescriptor.pathId,
+          addedNodes: [node.id],
+        })
+    }
+
+    await modification.save()
+  }
 }
 
 export const deleteTree = async (rootNode: TreeNode, trx: TransactionClientContract) => {

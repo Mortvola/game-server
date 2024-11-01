@@ -97,8 +97,8 @@ Route.group(() => {
 
   Route.group(() => {
     Route.get('/:sceneId/:id', 'TreeNodesController.get')
-    Route.post('', 'TreeNodesController.post')
-    Route.post('/tree', 'TreeNodesController.postTree')
+    Route.post(':sceneId', 'TreeNodesController.post')
+    Route.post('/tree/:sceneId', 'TreeNodesController.postTree')
     Route.delete('/:sceneId/:id', 'TreeNodesController.delete')
     Route.patch('/:sceneId/:id', 'TreeNodesController.patch')
   }).prefix('/tree-nodes')

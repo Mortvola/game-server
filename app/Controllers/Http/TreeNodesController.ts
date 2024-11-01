@@ -3,11 +3,14 @@ import Database from '@ioc:Adonis/Lucid/Database'
 import Component from 'App/Models/Component'
 import FolderItem, { ItemType } from 'App/Models/FolderItem'
 import NodeModification from 'App/Models/NodeModification'
+import Scene from 'App/Models/Scene'
 import SceneObject from 'App/Models/SceneObject'
 import TreeNode from 'App/Models/TreeNode'
 import {
   createTree, cyclicCheck,
   getTreeDescriptor, NodesResponse2,
+  ParentDescriptor,
+  setParent,
 } from 'App/Models/TreeUtils'
 
 export type ItemResponse = {
@@ -35,24 +38,21 @@ export default class TreeNodesController {
     }
   }
 
-  public async post ({ request }: HttpContextContract): Promise<NodesResponse2 | undefined> {
+  public async post ({ request, params }: HttpContextContract): Promise<NodesResponse2 | undefined> {
     const payload = request.body()
 
     const trx = await Database.transaction()
 
     try {
-      let treeDescriptor: NodesResponse2 | undefined
+      const scene = await Scene.findOrFail(payload.subSceneId)
 
-      if (payload.rootNodeId !== undefined) {
-        treeDescriptor = await createTree(
-          payload.rootNodeId,
-          payload.parentNodeId,
-          // payload.modifierNodeId,
-          // payload.path,
-          // payload.pathId,
-          trx,
-        )
-      }
+      const treeDescriptor = await createTree(
+        params.sceneId,
+        scene.rootNodeId,
+        scene.id,
+        payload as ParentDescriptor,
+        trx,
+      )
 
       await trx.commit()
 
@@ -111,45 +111,7 @@ export default class TreeNodesController {
           }
         }
 
-        // If there is a modifierNodeId and related properties then the
-        // node is being added as an addedNode to a node modifier
-        if (
-          payload.modifierNodeId !== null
-          && payload.pathId !== null
-        ) {
-          if (payload.parentNodeId !== null) {
-            throw new Error('Ambiguous parent information')
-          }
-
-          let modification = await NodeModification.query({ client: trx })
-            .where('nodeId', payload.modifierNodeId)
-            .where('sceneId', params.sceneId)
-            .where('pathId', payload.pathId)
-            .first()
-
-          if (modification) {
-            // Use a set to remove any duplicates
-            modification.addedNodes = [
-              ...new Set([
-                ...modification.addedNodes,
-                node.id,
-              ]),
-            ]
-          } else {
-            modification = new NodeModification()
-              .useTransaction(trx)
-              .fill({
-                nodeId: payload.modifierNodeId,
-                sceneId: params.sceneId,
-                pathId: payload.pathId,
-                addedNodes: [node.id],
-              })
-          }
-
-          await modification.save()
-        }
-
-        node.parentNodeId = payload.parentNodeId
+        await setParent(node, payload as ParentDescriptor, trx)
 
         await node.save()
       }
@@ -172,7 +134,7 @@ export default class TreeNodesController {
     }
   }
 
-  public async postTree ({ request }: HttpContextContract): Promise<ItemResponse | undefined> {
+  public async postTree ({ request, params }: HttpContextContract): Promise<ItemResponse | undefined> {
     const trx = await Database.transaction()
 
     const payload = request.body()
@@ -197,19 +159,18 @@ export default class TreeNodesController {
 
       await item.save()
 
-      // if (node.parentNodeId) {
       const nodesResponse = await createTree(
+        params.sceneId,
         node.id,
-        node.parentNodeId,
+        node.sceneId,
+        payload as ParentDescriptor,
         // payload.modifierNodeId,
         // payload.path,
         // payload.pathId,
         trx,
       )
 
-      node.parentNodeId = null
       await node.save()
-      // }
 
       await trx.commit()
 
