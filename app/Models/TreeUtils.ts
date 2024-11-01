@@ -174,7 +174,7 @@ export const getTreeDescriptor = async (
         }
 
         for (const compId of sceneObject.components) {
-          const component = await Component.find(compId)
+          const component = await Component.find(compId, { client: trx })
 
           if (component) {
             components.set(
