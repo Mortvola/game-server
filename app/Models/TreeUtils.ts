@@ -4,17 +4,17 @@ import SceneObject from './SceneObject'
 import Component from './Component'
 import NodeModification from './NodeModification'
 
-export type TreeModifierDescriptor = {
+type TreeModifierDescriptor = {
   id: number,
-  treeId: number,
+  sceneId: number,
   rootNodeId: number,
   rootTreeId: number,
   modifications?: NodeModification[],
 }
 
-export type TreeNodeDescriptor2 = {
+type TreeNodeDescriptor2 = {
   id: number,
-  treeId: number,
+  sceneId: number,
   sceneObjectId: number,
   children?: number[],
 }
@@ -23,13 +23,13 @@ const isTreeNodeDescriptor = (r: unknown): r is TreeNodeDescriptor2 => (
   (r as TreeNodeDescriptor2)?.sceneObjectId !== undefined
 )
 
-export type ComponentDescriptor = {
+type ComponentDescriptor = {
   id: number,
   type: string,
   props?: unknown,
 }
 
-export type SceneObjectDescriptor2 = {
+type SceneObjectDescriptor2 = {
   id: number,
   name: string,
   components: number[],
@@ -106,7 +106,7 @@ export const getTreeDescriptor = async (
 
       const descriptor: TreeNodeDescriptor2 = {
         id: node.id,
-        treeId: node.sceneId,
+        sceneId: node.sceneId,
         sceneObjectId: node.sceneObjectId,
         children: children?.map((child) => child.id),
       }
@@ -147,7 +147,7 @@ export const getTreeDescriptor = async (
 
       const descriptor: TreeModifierDescriptor = {
         id: node.id,
-        treeId: node.sceneId,
+        sceneId: node.sceneId,
         rootNodeId: node.rootNodeId ?? undefined,
         rootTreeId: node.rootSceneId ?? undefined,
         modifications: mods,

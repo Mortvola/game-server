@@ -21,7 +21,7 @@ export default class TreeNodesController {
     try {
       const descriptor = await getTreeDescriptor(
         parseInt(params.id, 10),
-        parseInt(params.treeId, 10),
+        parseInt(params.sceneId, 10),
         trx,
       )
 
@@ -72,7 +72,7 @@ export default class TreeNodesController {
     try {
       const node = await TreeNode.query({ client: trx })
         .where('id', params.id)
-        .where('sceneId', params.treeId)
+        .where('sceneId', params.sceneId)
         .firstOrFail()
 
       // let objectDescriptors: SceneObjectDescriptor[] | undefined
@@ -93,7 +93,7 @@ export default class TreeNodesController {
 
           const modification = await NodeModification.query({ client: trx })
             .where('nodeId', payload.previousParent.modifierNodeId)
-            .where('sceneId', params.treeId)
+            .where('sceneId', params.sceneId)
             .where('pathId', payload.previousParent.pathId)
             .firstOrFail()
 
@@ -123,7 +123,7 @@ export default class TreeNodesController {
 
           let modification = await NodeModification.query({ client: trx })
             .where('nodeId', payload.modifierNodeId)
-            .where('sceneId', params.treeId)
+            .where('sceneId', params.sceneId)
             .where('pathId', payload.pathId)
             .first()
 
@@ -140,7 +140,7 @@ export default class TreeNodesController {
               .useTransaction(trx)
               .fill({
                 nodeId: payload.modifierNodeId,
-                sceneId: params.treeId,
+                sceneId: params.sceneId,
                 pathId: payload.pathId,
                 addedNodes: [node.id],
               })
@@ -230,7 +230,7 @@ export default class TreeNodesController {
     try {
       const node = await TreeNode.query({ client: trx })
         .where('id', params.id)
-        .where('sceneId', params.treeId)
+        .where('sceneId', params.sceneId)
         .first()
 
       if (node) {

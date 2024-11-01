@@ -51,7 +51,7 @@ export default class SceneObjectsController {
         .useTransaction(trx)
         .fill({
           id: await getUniqueId(payload.modifierNodeId ?? payload.parentNodeId),
-          sceneId: params.treeId,
+          sceneId: params.sceneId,
           parentNodeId: payload.parentNodeId,
           sceneObjectId: object.id,
         })
@@ -68,7 +68,7 @@ export default class SceneObjectsController {
 
         let modification = await NodeModification.query({ client: trx })
           .where('nodeId', payload.modifierNodeId)
-          .where('sceneId', params.treeId)
+          .where('sceneId', params.sceneId)
           .where('pathId', payload.pathId)
           .first()
 
@@ -86,7 +86,7 @@ export default class SceneObjectsController {
             .useTransaction(trx)
             .fill({
               nodeId: payload.modifierNodeId,
-              sceneId: params.treeId,
+              sceneId: params.sceneId,
               pathId: payload.pathId,
               addedNodes: [node.id],
             })
