@@ -1,7 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
 import Component from 'App/Models/Component'
-import NodeModification from 'App/Models/NodeModification'
 import SceneObject from 'App/Models/SceneObject'
 import TreeNode from 'App/Models/TreeNode'
 import { getTreeDescriptor, getUniqueId, ParentDescriptor, setParent } from 'App/Models/TreeUtils'

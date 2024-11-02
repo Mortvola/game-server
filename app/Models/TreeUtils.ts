@@ -8,7 +8,7 @@ type TreeModifierDescriptor = {
   id: number,
   sceneId: number,
   rootNodeId: number,
-  rootTreeId: number,
+  rootSceneId: number,
   modifications?: NodeModification[],
 }
 
@@ -68,14 +68,14 @@ export const cyclicCheck = async (node: TreeNode, trx: TransactionClientContract
 
 export const getTreeDescriptor = async (
   rootNodeId: number,
-  rootTreeId: number,
+  rootSceneId: number,
   trx: TransactionClientContract
 ): Promise<NodesResponse2> => {
   type StackEntry = TreeNode
 
   const start = await TreeNode.query({ client: trx })
     .where('id', rootNodeId)
-    .where('sceneId', rootTreeId)
+    .where('sceneId', rootSceneId)
     .firstOrFail()
 
   let stack: StackEntry[] = [start]
@@ -116,7 +116,7 @@ export const getTreeDescriptor = async (
       }
     } else {
       if (node.rootSceneId === null) {
-        throw new Error('rootTreeId is not set')
+        throw new Error('rootSceneId is not set')
       }
 
       // This is a modifier node.
@@ -149,7 +149,7 @@ export const getTreeDescriptor = async (
         id: node.id,
         sceneId: node.sceneId,
         rootNodeId: node.rootNodeId ?? undefined,
-        rootTreeId: node.rootSceneId ?? undefined,
+        rootSceneId: node.rootSceneId ?? undefined,
         modifications: mods,
       }
 
