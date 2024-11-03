@@ -11,10 +11,10 @@ export default class NodeModification extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
   public updatedAt: DateTime
 
-  @column({ serializeAs: null })
+  @column()
   public nodeId: number | null
 
-  @column({ serializeAs: null })
+  @column()
   public sceneId: number
 
   @column()

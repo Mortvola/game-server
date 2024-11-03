@@ -40,6 +40,7 @@ export type NodesResponse2 = {
   nodes: (TreeNodeDescriptor2 | TreeModifierDescriptor)[],
   objects: SceneObjectDescriptor2[],
   components: ComponentDescriptor[],
+  modifications?: NodeModification[],
 }
 
 export const cyclicCheck = async (node: TreeNode, trx: TransactionClientContract) => {
@@ -223,9 +224,15 @@ export const createTree = async (
 
   await root.save()
 
-  await setParent(root, parentDescriptor, trx)
+  const modification = await setParent(root, parentDescriptor, trx)
 
-  return getTreeDescriptor(root.id, root.sceneId, trx)
+  const descriptor = await getTreeDescriptor(root.id, root.sceneId, trx)
+
+  if (modification) {
+    descriptor.modifications = [modification]
+  }
+
+  return descriptor
 }
 
 export type ParentDescriptor = {
@@ -243,6 +250,8 @@ export const setParent = async (
 
   await node.save()
 
+  let modification: NodeModification | null = null
+
   if (
     parentDescriptor.modifierNodeId !== null
   && parentDescriptor.pathId !== null
@@ -251,7 +260,7 @@ export const setParent = async (
       throw new Error('Ambiguous parent information')
     }
 
-    let modification = await NodeModification.query({ client: trx })
+    modification = await NodeModification.query({ client: trx })
       .where('nodeId', parentDescriptor.modifierNodeId)
       .where('sceneId', node.sceneId)
       .where('pathId', parentDescriptor.pathId)
@@ -279,6 +288,8 @@ export const setParent = async (
 
     await modification.save()
   }
+
+  return modification
 }
 
 export const deleteTree = async (rootNode: TreeNode, trx: TransactionClientContract) => {

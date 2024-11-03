@@ -209,12 +209,23 @@ export default class TreeNodesController {
           await object.delete()
         }
 
-        const modifications = await NodeModification.query({ client: trx })
+        let modifications = await NodeModification.query({ client: trx })
           .where('nodeId', node.id)
           .where('sceneId', node.sceneId)
 
         for (const mod of modifications) {
           await mod.delete()
+        }
+
+        // Delete any appearance of this node in the node modification addedNodes.
+        modifications = await NodeModification.query({ client: trx })
+          .where('sceneId', node.sceneId)
+          .whereRaw(`added_nodes @> \'${node.id}\'::jsonb`)
+
+        for (const mod of modifications) {
+          mod.addedNodes = mod.addedNodes.filter((id) => id !== node.id)
+
+          await mod.save()
         }
 
         await node.delete()
