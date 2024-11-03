@@ -54,11 +54,15 @@ export default class SceneObjectsController {
           sceneObjectId: object.id,
         })
 
-      await setParent(node, payload as ParentDescriptor, trx)
+      const modification = await setParent(node, payload as ParentDescriptor, trx)
 
       await node.save()
 
       const response = await getTreeDescriptor(node.id, node.sceneId, trx)
+
+      if (modification) {
+        response.modifications = [modification]
+      }
 
       await trx.commit()
 

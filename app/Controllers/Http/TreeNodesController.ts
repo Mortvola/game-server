@@ -8,17 +8,18 @@ import SceneObject from 'App/Models/SceneObject'
 import TreeNode from 'App/Models/TreeNode'
 import {
   createTree, cyclicCheck,
-  getTreeDescriptor, NodesResponse2,
+  getTreeDescriptor, NodesResponse,
   ParentDescriptor,
   setParent,
+  unsetParent,
 } from 'App/Models/TreeUtils'
 
 export type ItemResponse = {
   item: FolderItem,
-} & NodesResponse2
+} & NodesResponse
 
 export default class TreeNodesController {
-  public async get ({ params }: HttpContextContract): Promise<NodesResponse2 | undefined> {
+  public async get ({ params }: HttpContextContract): Promise<NodesResponse | undefined> {
     const trx = await Database.transaction()
 
     try {
@@ -38,7 +39,7 @@ export default class TreeNodesController {
     }
   }
 
-  public async post ({ request, params }: HttpContextContract): Promise<NodesResponse2 | undefined> {
+  public async post ({ request, params }: HttpContextContract): Promise<NodesResponse | undefined> {
     const payload = request.body()
 
     const trx = await Database.transaction()
@@ -64,12 +65,14 @@ export default class TreeNodesController {
     }
   }
 
-  public async patch ({ request, params }: HttpContextContract): Promise<void> {
+  public async patch ({ request, params }: HttpContextContract): Promise<NodeModification[]> {
     const payload = request.body()
 
     const trx = await Database.transaction()
 
     try {
+      const modifications: NodeModification[] = []
+
       const node = await TreeNode.query({ client: trx })
         .where('id', params.id)
         .where('sceneId', params.sceneId)
@@ -80,38 +83,17 @@ export default class TreeNodesController {
       // If there is a previousParent property then that indicates
       // that there is a change of parent.
       if (payload.previousParent) {
-        // If there is a modifierNodeId and related properties
-        // then the node is being removed from that node modifier
-        // as an added node.
-        if (
-          payload.previousParent.modifierNodeId !== null
-          && payload.previousParent.pathId !== null
-        ) {
-          if (payload.previousParent.parentNodeId !== null) {
-            throw new Error('Ambiguous previous parent information')
-          }
+        let modification = await unsetParent(node, payload.previousParent as ParentDescriptor, trx)
 
-          const modification = await NodeModification.query({ client: trx })
-            .where('nodeId', payload.previousParent.modifierNodeId)
-            .where('sceneId', params.sceneId)
-            .where('pathId', payload.previousParent.pathId)
-            .firstOrFail()
-
-          if (modification) {
-            const index = modification.addedNodes.findIndex((an) => an === node.id)
-
-            if (index !== -1) {
-              modification.addedNodes = [
-                ...modification.addedNodes.slice(0, index),
-                ...modification.addedNodes.slice(index + 1),
-              ]
-
-              await modification.save()
-            }
-          }
+        if (modification) {
+          modifications.push(modification)
         }
 
-        await setParent(node, payload as ParentDescriptor, trx)
+        modification = await setParent(node, payload as ParentDescriptor, trx)
+
+        if (modification) {
+          modifications.push(modification)
+        }
 
         await node.save()
       }
@@ -124,9 +106,7 @@ export default class TreeNodesController {
 
       await trx.commit()
 
-      // return {
-      //   objects: objectDescriptors,
-      // }
+      return modifications
     } catch (error) {
       await trx.rollback()
       console.log(error)

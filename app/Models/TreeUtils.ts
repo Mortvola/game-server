@@ -29,16 +29,16 @@ type ComponentDescriptor = {
   props?: unknown,
 }
 
-type SceneObjectDescriptor2 = {
+type SceneObjectDescriptor = {
   id: number,
   name: string,
   components: number[],
 }
 
-export type NodesResponse2 = {
+export type NodesResponse = {
   rootNodeId: number,
   nodes: (TreeNodeDescriptor2 | TreeModifierDescriptor)[],
-  objects: SceneObjectDescriptor2[],
+  objects: SceneObjectDescriptor[],
   components: ComponentDescriptor[],
   modifications?: NodeModification[],
 }
@@ -71,7 +71,7 @@ export const getTreeDescriptor = async (
   rootNodeId: number,
   rootSceneId: number,
   trx: TransactionClientContract
-): Promise<NodesResponse2> => {
+): Promise<NodesResponse> => {
   type StackEntry = TreeNode
 
   const start = await TreeNode.query({ client: trx })
@@ -82,7 +82,7 @@ export const getTreeDescriptor = async (
   let stack: StackEntry[] = [start]
 
   const nodes: Map<number, TreeNodeDescriptor2 | TreeModifierDescriptor> = new Map()
-  const objects: Map<number, SceneObjectDescriptor2[]> = new Map()
+  const objects: Map<number, SceneObjectDescriptor[]> = new Map()
   const components: Map<number, ComponentDescriptor> = new Map()
 
   while (stack.length > 0) {
@@ -165,10 +165,10 @@ export const getTreeDescriptor = async (
       const sceneObjects = await SceneObject.query({ client: trx})
         .where('id', node.sceneObjectId)
 
-      const o: SceneObjectDescriptor2[] = []
+      const o: SceneObjectDescriptor[] = []
 
       for (const sceneObject of sceneObjects) {
-        const descriptor: SceneObjectDescriptor2 = {
+        const descriptor: SceneObjectDescriptor = {
           id: sceneObject.id,
           name: sceneObject.name,
           components: [],
@@ -287,6 +287,47 @@ export const setParent = async (
     }
 
     await modification.save()
+  }
+
+  return modification
+}
+
+export const unsetParent = async (
+  node: TreeNode,
+  parentDescriptor: ParentDescriptor,
+  trx: TransactionClientContract,
+) => {
+  let modification: NodeModification | null = null
+
+  // If there is a modifierNodeId and related properties
+  // then the node is being removed from that node modifier
+  // as an added node.
+  if (
+    parentDescriptor.modifierNodeId !== null
+          && parentDescriptor.pathId !== null
+  ) {
+    if (parentDescriptor.parentNodeId !== null) {
+      throw new Error('Ambiguous previous parent information')
+    }
+
+    modification = await NodeModification.query({ client: trx })
+      .where('nodeId', parentDescriptor.modifierNodeId)
+      .where('sceneId', node.sceneId)
+      .where('pathId', parentDescriptor.pathId)
+      .firstOrFail()
+
+    if (modification) {
+      const index = modification.addedNodes.findIndex((an) => an === node.id)
+
+      if (index !== -1) {
+        modification.addedNodes = [
+          ...modification.addedNodes.slice(0, index),
+          ...modification.addedNodes.slice(index + 1),
+        ]
+
+        await modification.save()
+      }
+    }
   }
 
   return modification
