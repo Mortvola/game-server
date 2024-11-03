@@ -6,6 +6,7 @@ import NodeModification from 'App/Models/NodeModification'
 import Scene from 'App/Models/Scene'
 import SceneObject from 'App/Models/SceneObject'
 import TreeNode from 'App/Models/TreeNode'
+import { schema } from '@ioc:Adonis/Core/Validator'
 import {
   createTree, cyclicCheck,
   getTreeDescriptor, NodesResponse,
@@ -40,7 +41,14 @@ export default class TreeNodesController {
   }
 
   public async post ({ request, params }: HttpContextContract): Promise<NodesResponse | undefined> {
-    const payload = request.body()
+    const payload = await request.validate({
+      schema: schema.create({
+        subSceneId: schema.number(),
+        parentNodeId: schema.number.nullable(),
+        modifierNodeId: schema.number.nullable(),
+        pathId: schema.number.nullable(),
+      }),
+    })
 
     const trx = await Database.transaction()
 
@@ -51,7 +59,7 @@ export default class TreeNodesController {
         params.sceneId,
         scene.rootNodeId,
         scene.id,
-        payload as ParentDescriptor,
+        payload,
         trx,
       )
 
@@ -66,7 +74,18 @@ export default class TreeNodesController {
   }
 
   public async patch ({ request, params }: HttpContextContract): Promise<NodeModification[]> {
-    const payload = request.body()
+    const payload = await request.validate({
+      schema: schema.create({
+        previousParent: schema.object.optional().members({
+          parentNodeId: schema.number.nullable(),
+          modifierNodeId: schema.number.nullable(),
+          pathId: schema.number.nullable(),
+        }),
+        parentNodeId: schema.number.nullable(),
+        modifierNodeId: schema.number.nullable(),
+        pathId: schema.number.nullable(),
+      }),
+    })
 
     const trx = await Database.transaction()
 
@@ -83,13 +102,13 @@ export default class TreeNodesController {
       // If there is a previousParent property then that indicates
       // that there is a change of parent.
       if (payload.previousParent) {
-        let modification = await unsetParent(node, payload.previousParent as ParentDescriptor, trx)
+        let modification = await unsetParent(node, payload.previousParent, trx)
 
         if (modification) {
           modifications.push(modification)
         }
 
-        modification = await setParent(node, payload as ParentDescriptor, trx)
+        modification = await setParent(node, payload, trx)
 
         if (modification) {
           modifications.push(modification)

@@ -1,9 +1,17 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import NodeModification from 'App/Models/NodeModification'
+import { schema } from '@ioc:Adonis/Core/Validator'
 
 export default class NodeModificationsController {
   public async update ({ request }: HttpContextContract) {
-    const payload = request.body()
+    const payload = await request.validate({
+      schema: schema.create({
+        sceneId: schema.number(),
+        modifierNodeId: schema.number(),
+        pathId: schema.number(),
+        modifications: schema.object().anyMembers(),
+      }),
+    })
 
     if (payload) {
       let mods = await NodeModification.query()

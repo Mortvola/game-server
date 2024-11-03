@@ -3,15 +3,28 @@ import Database from '@ioc:Adonis/Lucid/Database'
 import Component from 'App/Models/Component'
 import SceneObject from 'App/Models/SceneObject'
 import TreeNode from 'App/Models/TreeNode'
-import { getTreeDescriptor, getUniqueId, ParentDescriptor, setParent } from 'App/Models/TreeUtils'
+import { getTreeDescriptor, getUniqueId, setParent } from 'App/Models/TreeUtils'
+import { schema } from '@ioc:Adonis/Core/Validator'
 
 export default class SceneObjectsController {
   public async uploadSceneObject ({ request, params }: HttpContextContract) {
     const trx = await Database.transaction()
+
     try {
       const object = new SceneObject().useTransaction(trx)
 
-      const payload = request.body()
+      const payload = await request.validate({
+        schema: schema.create({
+          name: schema.string(),
+          component: schema.object.optional().members({
+            type: schema.string(),
+            props: schema.object().anyMembers(),
+          }),
+          parentNodeId: schema.number.nullable(),
+          modifierNodeId: schema.number.nullable(),
+          pathId: schema.number.nullable(),
+        }),
+      })
 
       const transform = new Component().useTransaction(trx)
         .fill({
@@ -54,7 +67,7 @@ export default class SceneObjectsController {
           sceneObjectId: object.id,
         })
 
-      const modification = await setParent(node, payload as ParentDescriptor, trx)
+      const modification = await setParent(node, payload, trx)
 
       await node.save()
 
@@ -75,7 +88,12 @@ export default class SceneObjectsController {
   }
 
   public async updateSceneObject ({ request, params }: HttpContextContract) {
-    const payload = request.body()
+    const payload = await request.validate({
+      schema: schema.create({
+        name: schema.string(),
+        components: schema.array().members(schema.number()),
+      }),
+    })
 
     if (payload) {
       let object = await SceneObject.findOrFail(params.id)
