@@ -3,6 +3,7 @@ import TreeNode from './TreeNode'
 import SceneObject from './SceneObject'
 import Component from './Component'
 import NodeModification from './NodeModification'
+import Scene from './Scene'
 
 type TreeModifierDescriptor = {
   id: number,
@@ -208,21 +209,19 @@ export const getTreeDescriptor = async (
 
 export const createTree = async (
   sceneId: number,
-  rootNodeId: number,
-  rootSceneId: number,
+  rootScene: Scene,
   parentDescriptor: ParentDescriptor,
   trx: TransactionClientContract,
 ) => {
-  const root = new TreeNode()
+  const root = await new TreeNode()
     .useTransaction(trx)
     .fill({
-      id: await getUniqueId(),
+      id: getUniqueId(),
       sceneId,
-      rootNodeId,
-      rootSceneId,
+      rootNodeId: rootScene.rootNodeId,
+      rootSceneId: rootScene.id,
     })
-
-  await root.save()
+    .save()
 
   const modification = await setParent(root, parentDescriptor, trx)
 
@@ -233,6 +232,108 @@ export const createTree = async (
   }
 
   return descriptor
+}
+
+export const createPrefab = async (
+  nodeId: number,
+  sceneId: number,
+  trx: TransactionClientContract,
+) => {
+  let root = await TreeNode.query({ client: trx })
+    .where('id', nodeId)
+    .where('sceneId', sceneId)
+    .firstOrFail()
+
+  let name: string | null = null
+
+  if (root.sceneObjectId !== null) {
+    const object = await SceneObject.find(root.sceneObjectId, { client: trx })
+
+    if (object) {
+      name = object.name
+    }
+  }
+
+  const scene = await new Scene()
+    .useTransaction(trx)
+    .fill({
+      name: name ?? 'Unknown',
+    })
+    .save()
+
+  await root.merge({
+    parentNodeId: null,
+  })
+    .save()
+
+  const modifierNode = await new TreeNode()
+    .useTransaction(trx)
+    .fill({
+      id: getUniqueId(),
+      sceneId,
+      rootNodeId: root.id,
+      rootSceneId: scene.id,
+    })
+    .save()
+
+  type StackEntry = { node: TreeNode, parentNodeId: number | null }
+  let stack: StackEntry[] = [{ node: root, parentNodeId: root.parentNodeId }]
+
+  while (stack.length > 0) {
+    const { node, parentNodeId } = stack[0]
+    stack = stack.slice(1)
+
+    const children = await TreeNode.query({ client: trx })
+      .where('parentNodeId', node.id)
+      .where('sceneId', sceneId)
+
+    // Xor the node id with the id of the modifier node so that
+    // any modifiers higher in the tree can still be applied.
+    const newNodeId = modifierNode.id ^ node.id
+
+    stack.push(...children.map((child) => ({ node: child, parentNodeId: newNodeId })))
+
+    const nodeModifications = await NodeModification.query({ client: trx })
+      .where('nodeId', node.id)
+      .where('sceneId', node.sceneId)
+
+    for (const mod of nodeModifications) {
+      await mod.merge({
+        nodeId: newNodeId,
+        sceneId: scene.id,
+      })
+        .save()
+    }
+
+    // Since we are changing the primary id of the tree node then
+    // we must use the query builder interface instead of the ORM
+    // interface.
+    await trx.from('tree_nodes')
+      .where('id', node.id)
+      .where('scene_id', node.sceneId)
+      .update({
+        id: newNodeId,
+        scene_id: scene.id,
+        parent_node_id: parentNodeId,
+      })
+
+    // Set the values in the ORM model for later use.
+    node.id = newNodeId
+    node.sceneId = scene.id
+    node.parentNodeId = parentNodeId
+  }
+
+  await modifierNode.merge({
+    rootNodeId: root.id,
+  })
+    .save()
+
+  await scene.merge({
+    rootNodeId: root.id,
+  })
+    .save()
+
+  return { scene, root: modifierNode }
 }
 
 export type ParentDescriptor = {
@@ -333,7 +434,10 @@ export const unsetParent = async (
   return modification
 }
 
-export const deleteTree = async (rootNode: TreeNode, trx: TransactionClientContract) => {
+export const deleteTree = async (
+  rootNode: TreeNode,
+  trx: TransactionClientContract,
+) => {
   let stack: TreeNode[] = [rootNode]
 
   const nodes: Map<number, TreeNode> = new Map()
@@ -352,6 +456,7 @@ export const deleteTree = async (rootNode: TreeNode, trx: TransactionClientContr
     // Also, don't delete the root node of modifier nodes.
     const children = await TreeNode.query({ client: trx })
       .where('parentNodeId', node.id)
+      .where('sceneId', node.sceneId)
 
     // Only push children onto the stack if they are
     // not in the map and not already on the stack
@@ -365,56 +470,19 @@ export const deleteTree = async (rootNode: TreeNode, trx: TransactionClientContr
   // Iterate through the map and delete the nodes
   // and associated data.
   for (const [, node] of Array.from(nodes)) {
+    if (node.sceneObjectId) {
     // Delete any associated scene objects (there should only be 1)
-    const objects = await SceneObject.query({ client: trx })
-      .where('nodeId', node.id)
+      const object = await SceneObject.find(node.sceneObjectId, { client: trx })
 
-    if (objects.length > 1) {
-      console.log(`Warning: ${objects.length} base scene objects found for node: ${node.id} `)
-    }
-
-    for (const object of objects) {
-      await object.delete()
+      if (object) {
+        await object.delete()
+      }
     }
 
     await node.delete()
   }
 }
 
-export const getUniqueId = async (nodeId: number | null = null): Promise<number> => {
-  let uniqueId = Math.trunc(Math.random() * 2147483647)
-
-  // if (nodeId !== null) {
-  //   // Find the root of the tree that contains the node with id nodeID.
-  //   let root = await TreeNode.findOrFail(nodeId)
-
-  //   while (root.parentNodeId !== null) {
-  //     root = await TreeNode.findOrFail(root.parentNodeId)
-  //   }
-
-  //   let stack: TreeNode[] = [root]
-  //   const idSet: Set<number> = new Set()
-
-  //   while (stack.length > 0) {
-  //     const node = stack[0]
-  //     stack = stack.slice(1)
-
-  //     if (node.id === uniqueId) {
-  //       // The unique ID conflicts with the current node.
-  //       // Generate a new ID until we find one that is not
-  //       // found in the set
-  //       do {
-  //         uniqueId = Math.trunc(Math.random() * 4294967295)
-  //       } while (idSet.has(uniqueId) || node.id === uniqueId)
-  //     }
-
-  //     idSet.add(node.id)
-
-  //     const children = await TreeNode.query().where('parentNodeId', node.id)
-
-  //     stack.push(...children)
-  //   }
-  // }
-
-  return uniqueId
+export const getUniqueId = (): number => {
+  return Math.trunc(Math.random() * 2147483646) + 1
 }

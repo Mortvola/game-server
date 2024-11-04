@@ -16,6 +16,7 @@
   "preloads": [
     "./start/routes",
     "./start/kernel",
+    "./start/events",
     {
       "file": "./start/namingStrategy",
       "environment": [

@@ -19,6 +19,8 @@ export default class FoldersController {
     for (const item of items) {
       switch (item.type) {
         case ItemType.Scene:
+        case ItemType.TreeNode:
+
           const scene = await Scene.find(item.itemId)
 
           if (scene) {
@@ -59,19 +61,6 @@ export default class FoldersController {
 
           if (model) {
             item.name = model.name
-          }
-
-          break
-
-        case ItemType.TreeNode:
-          const treeNode = await TreeNode.find(item.itemId)
-
-          if (treeNode && treeNode.sceneObjectId !== null) {
-            const sceneObject = await SceneObject.query()
-              .where('id', treeNode.sceneObjectId)
-              .first()
-
-            item.name = sceneObject?.name ?? 'Unknown'
           }
 
           break
@@ -242,7 +231,10 @@ export default class FoldersController {
             const scene = await Scene.find(item.itemId, { client: trx })
 
             if (scene) {
-              const rootNode = await TreeNode.find(scene.rootNodeId, { client: trx })
+              const rootNode = await TreeNode.query({ client: trx })
+                .where('id', scene.rootNodeId)
+                .where('sceneId', scene.id)
+                .first()
 
               if (rootNode) {
                 await deleteTree(rootNode, trx)

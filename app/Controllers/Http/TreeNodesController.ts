@@ -8,9 +8,9 @@ import SceneObject from 'App/Models/SceneObject'
 import TreeNode from 'App/Models/TreeNode'
 import { schema } from '@ioc:Adonis/Core/Validator'
 import {
+  createPrefab,
   createTree, cyclicCheck,
   getTreeDescriptor, NodesResponse,
-  ParentDescriptor,
   setParent,
   unsetParent,
 } from 'App/Models/TreeUtils'
@@ -57,8 +57,7 @@ export default class TreeNodesController {
 
       const treeDescriptor = await createTree(
         params.sceneId,
-        scene.rootNodeId,
-        scene.id,
+        scene,
         payload,
         trx,
       )
@@ -134,48 +133,40 @@ export default class TreeNodesController {
   }
 
   public async postTree ({ request, params }: HttpContextContract): Promise<ItemResponse | undefined> {
+    const payload = await request.validate({
+      schema: schema.create({
+        nodeId: schema.number(),
+        folderId: schema.number(),
+        parentNodeId: schema.number.nullable(),
+        modifierNodeId: schema.number.nullable(),
+        pathId: schema.number.nullable(),
+      }),
+    })
+
     const trx = await Database.transaction()
 
-    const payload = request.body()
-
     try {
-      const node = await TreeNode.findOrFail(payload.nodeId, { client: trx })
+      const { scene, root } = await createPrefab(payload.nodeId, params.sceneId, trx)
 
-      // Find the root scene object to get the name for the folder item.
-      // let root = node
-      // while (root.rootNodeId !== null) {
-      //   root = await TreeNode.findOrFail(root.rootNodeId, { client: trx })
-      // }
+      const item = await new FolderItem()
+        .useTransaction(trx)
+        .fill({
+          name: 'Unknown',
+          itemId: scene.id,
+          parentId: payload.folderId,
+          type: ItemType.TreeNode,
+        })
+        .save()
 
-      const item = new FolderItem().useTransaction(trx)
+      await setParent(root, payload, trx)
 
-      item.fill({
-        name: 'Unknown',
-        itemId: payload.nodeId,
-        parentId: payload.folderId,
-        type: ItemType.TreeNode,
-      })
-
-      await item.save()
-
-      const nodesResponse = await createTree(
-        params.sceneId,
-        node.id,
-        node.sceneId,
-        payload as ParentDescriptor,
-        // payload.modifierNodeId,
-        // payload.path,
-        // payload.pathId,
-        trx,
-      )
-
-      await node.save()
+      const treeDescriptor = await getTreeDescriptor(root.id, root.sceneId, trx)
 
       await trx.commit()
 
       return {
         item,
-        ...nodesResponse,
+        ...treeDescriptor,
       }
     } catch (error) {
       trx.rollback()

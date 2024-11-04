@@ -62,7 +62,7 @@ export default class SceneObjectsController {
       const node = new TreeNode()
         .useTransaction(trx)
         .fill({
-          id: await getUniqueId(payload.modifierNodeId ?? payload.parentNodeId),
+          id: getUniqueId(),
           sceneId: params.sceneId,
           sceneObjectId: object.id,
         })

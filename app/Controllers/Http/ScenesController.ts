@@ -18,32 +18,32 @@ export default class ScenesController {
     const trx = await Database.transaction()
 
     try {
+      const scene = await new Scene()
+        .useTransaction(trx)
+        .fill({
+          name: requestData.name,
+        })
+        .save()
+
       const object = await new SceneObject()
         .useTransaction(trx)
         .fill({
           name: 'root',
-          // object: {
-          //   type: ObjectType.NodeObject,
-          //   components: [],
-          // },
-          // nodeId: treeNode.id,
         })
         .save()
 
       const treeNode = await new TreeNode()
         .useTransaction(trx)
         .fill({
-          id: await getUniqueId(),
+          id: getUniqueId(),
+          sceneId: scene.id,
           sceneObjectId: object.id,
         })
         .save()
 
-      const scene = await new Scene()
-        .useTransaction(trx)
-        .fill({
-          name: requestData.name,
-          rootNodeId: treeNode.id,
-        })
+      await scene.merge({
+        rootNodeId: treeNode.id,
+      })
         .save()
 
       let parentId = request.qs().parentId
