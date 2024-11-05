@@ -215,7 +215,6 @@ export default class FoldersController {
 
             if (scene) {
               const modNodes = await TreeNode.query({ client: trx })
-                .where('rootNodeId', scene.rootNodeId)
                 .where('rootSceneId', scene.id)
 
               if (modNodes.length > 0) {

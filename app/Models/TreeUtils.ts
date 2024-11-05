@@ -90,7 +90,7 @@ export const getTreeDescriptor = async (
     const node = stack[0]
     stack = stack.slice(1)
 
-    if (node.rootNodeId === null) {
+    if (node.rootSceneId === null) {
       const children = await TreeNode.query({ client: trx })
         .where('parentNodeId', node.id)
         .where('sceneId', node.sceneId)
@@ -122,9 +122,12 @@ export const getTreeDescriptor = async (
       }
 
       // This is a modifier node.
+
+      const scene = await Scene.findOrFail(node.rootSceneId, { client: trx })
+
       const root = await TreeNode.query({ client: trx })
-        .where('id', node.rootNodeId)
-        .where('sceneId', node.rootSceneId)
+        .where('id', scene.rootNodeId)
+        .where('sceneId', scene.id)
         .firstOrFail()
 
       // Only push onto the stack nodes that we have not yet seen
@@ -150,8 +153,8 @@ export const getTreeDescriptor = async (
       const descriptor: TreeModifierDescriptor = {
         id: node.id,
         sceneId: node.sceneId,
-        rootNodeId: node.rootNodeId ?? undefined,
-        rootSceneId: node.rootSceneId ?? undefined,
+        rootNodeId: scene.rootNodeId,
+        rootSceneId: scene.id,
         modifications: mods,
       }
 
@@ -218,7 +221,6 @@ export const createTree = async (
     .fill({
       id: getUniqueId(),
       sceneId,
-      rootNodeId: rootScene.rootNodeId,
       rootSceneId: rootScene.id,
     })
     .save()
@@ -271,7 +273,6 @@ export const createPrefab = async (
     .fill({
       id: getUniqueId(),
       sceneId,
-      rootNodeId: root.id,
       rootSceneId: scene.id,
     })
     .save()
@@ -324,7 +325,7 @@ export const createPrefab = async (
   }
 
   await modifierNode.merge({
-    rootNodeId: root.id,
+    rootSceneId: root.sceneId,
   })
     .save()
 
