@@ -479,6 +479,14 @@ export const deleteTree = async (
       }
     }
 
+    const modifications = await NodeModification.query({ client: trx })
+      .where('nodeId', node.id)
+      .where('sceneId', node.sceneId)
+
+    for (const mod of modifications) {
+      await mod.delete()
+    }
+
     await node.delete()
   }
 }
