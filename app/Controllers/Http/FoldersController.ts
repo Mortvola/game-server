@@ -209,28 +209,19 @@ export default class FoldersController {
             }
             break
 
-          case ItemType.TreeNode:
-            const treeNode = await TreeNode.find(item.itemId, { client: trx })
-
-            if (treeNode) {
-              // If there are existing modifier nodes that use this
-              // root then don't delete the node tree.
-              const modifierNodes = await TreeNode.query({ client: trx })
-                .where('rootNodeId', treeNode.id)
-
-              if (modifierNodes.length > 0) {
-                throw new Error(`Prefab ${treeNode.id} in use.`)
-              }
-
-              await deleteTree(treeNode, trx)
-            }
-
-            break
-
           case ItemType.Scene:
+          case ItemType.TreeNode:
             const scene = await Scene.find(item.itemId, { client: trx })
 
             if (scene) {
+              const modNodes = await TreeNode.query({ client: trx })
+                .where('rootNodeId', scene.rootNodeId)
+                .where('rootSceneId', scene.id)
+
+              if (modNodes.length > 0) {
+                throw new Error('scene in use')
+              }
+
               const rootNode = await TreeNode.query({ client: trx })
                 .where('id', scene.rootNodeId)
                 .where('sceneId', scene.id)
