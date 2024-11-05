@@ -164,6 +164,8 @@ export default class TreeNodesController {
 
       await trx.commit()
 
+      item.name = scene.name
+
       return {
         item,
         ...treeDescriptor,
