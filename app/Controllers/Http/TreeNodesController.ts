@@ -156,7 +156,7 @@ export default class TreeNodesController {
     try {
       const sceneId = parseInt(params.sceneId, 10)
 
-      const { scene, root } = await createPrefab(payload.nodeId, sceneId, trx)
+      const { scene, root, deletedNodes } = await createPrefab(payload.nodeId, sceneId, trx)
 
       const item = await new FolderItem()
         .useTransaction(trx)
@@ -179,6 +179,7 @@ export default class TreeNodesController {
       return {
         item,
         ...treeDescriptor,
+        deletedNodes,
       }
     } catch (error) {
       trx.rollback()

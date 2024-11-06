@@ -45,6 +45,7 @@ export type NodesResponse = {
   objects: SceneObjectDescriptor[],
   components: ComponentDescriptor[],
   modifications?: NodeModification[],
+  deletedNodes?: { id: number, sceneId: number}[],
 }
 
 export const cyclicCheck = async (node: TreeNode, trx: TransactionClientContract) => {
@@ -247,6 +248,8 @@ export const createPrefab = async (
   sceneId: number,
   trx: TransactionClientContract,
 ) => {
+  const deletedNodes: { id: number, sceneId: number }[] = []
+
   let root = await TreeNode.query({ client: trx })
     .where('id', nodeId)
     .where('sceneId', sceneId)
@@ -324,6 +327,8 @@ export const createPrefab = async (
         parent_node_id: parentNodeId,
       })
 
+    deletedNodes.push({ id: node.id, sceneId: node.sceneId })
+
     // Set the values in the ORM model for later use.
     node.id = newNodeId
     node.sceneId = scene.id
@@ -340,7 +345,7 @@ export const createPrefab = async (
   })
     .save()
 
-  return { scene, root: modifierNode }
+  return { scene, root: modifierNode, deletedNodes }
 }
 
 export type ParentDescriptor = {
