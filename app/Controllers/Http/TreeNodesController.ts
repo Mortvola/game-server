@@ -24,9 +24,12 @@ export default class TreeNodesController {
     const trx = await Database.transaction()
 
     try {
+      const nodeId = parseInt(params.id, 10)
+      const sceneId = parseInt(params.sceneId, 10)
+
       const descriptor = await getTreeDescriptor(
-        parseInt(params.id, 10),
-        parseInt(params.sceneId, 10),
+        nodeId,
+        sceneId,
         trx,
       )
 
@@ -53,10 +56,12 @@ export default class TreeNodesController {
     const trx = await Database.transaction()
 
     try {
+      const sceneId = parseInt(params.sceneId, 10)
+
       const scene = await Scene.findOrFail(payload.subSceneId)
 
       const treeDescriptor = await createTree(
-        params.sceneId,
+        sceneId,
         scene,
         payload,
         trx,
@@ -89,11 +94,14 @@ export default class TreeNodesController {
     const trx = await Database.transaction()
 
     try {
+      const nodeId = parseInt(params.id, 10)
+      const sceneId = parseInt(params.sceneId, 10)
+
       const modifications: NodeModification[] = []
 
       const node = await TreeNode.query({ client: trx })
-        .where('id', params.id)
-        .where('sceneId', params.sceneId)
+        .where('id', nodeId)
+        .where('sceneId', sceneId)
         .firstOrFail()
 
       // let objectDescriptors: SceneObjectDescriptor[] | undefined
@@ -146,7 +154,9 @@ export default class TreeNodesController {
     const trx = await Database.transaction()
 
     try {
-      const { scene, root } = await createPrefab(payload.nodeId, params.sceneId, trx)
+      const sceneId = parseInt(params.sceneId, 10)
+
+      const { scene, root } = await createPrefab(payload.nodeId, sceneId, trx)
 
       const item = await new FolderItem()
         .useTransaction(trx)
@@ -181,9 +191,12 @@ export default class TreeNodesController {
     const trx = await Database.transaction()
 
     try {
+      const nodeId = parseInt(params.id, 10)
+      const sceneId = parseInt(params.sceneId, 10)
+
       const node = await TreeNode.query({ client: trx })
-        .where('id', params.id)
-        .where('sceneId', params.sceneId)
+        .where('id', nodeId)
+        .where('sceneId', sceneId)
         .first()
 
       if (node) {

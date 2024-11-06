@@ -11,6 +11,8 @@ export default class SceneObjectsController {
     const trx = await Database.transaction()
 
     try {
+      const sceneId = parseInt(params.sceneId, 10)
+
       const object = new SceneObject().useTransaction(trx)
 
       const payload = await request.validate({
@@ -63,7 +65,7 @@ export default class SceneObjectsController {
         .useTransaction(trx)
         .fill({
           id: getUniqueId(),
-          sceneId: params.sceneId,
+          sceneId,
           sceneObjectId: object.id,
         })
 
@@ -95,8 +97,10 @@ export default class SceneObjectsController {
       }),
     })
 
+    const objectId = parseInt(params.id, 10)
+
     if (payload) {
-      let object = await SceneObject.findOrFail(params.id)
+      let object = await SceneObject.findOrFail(objectId)
 
       object.merge({
         name: payload.name,
