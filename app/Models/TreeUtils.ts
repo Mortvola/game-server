@@ -37,7 +37,10 @@ type SceneObjectDescriptor = {
 }
 
 export type NodesResponse = {
-  rootNodeId: number,
+  root: {
+    id: number,
+    sceneId: number,
+  }
   nodes: (TreeNodeDescriptor2 | TreeModifierDescriptor)[],
   objects: SceneObjectDescriptor[],
   components: ComponentDescriptor[],
@@ -203,7 +206,10 @@ export const getTreeDescriptor = async (
   }
 
   return {
-    rootNodeId,
+    root: {
+      id: rootNodeId,
+      sceneId: rootSceneId,
+    },
     nodes: Array.from(nodes.values()),
     objects: Array.from(objects.values()).flatMap((obj) => obj),
     components: Array.from(components.values()),
