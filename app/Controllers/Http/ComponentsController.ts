@@ -3,7 +3,10 @@ import Component from 'App/Models/Component'
 
 export default class ComponentsController {
   public async update ({ request, params }: HttpContextContract) {
-    const component = await Component.findOrFail(params.id)
+    const component = await Component.query()
+      .where('sceneObjectId', params.sceneObjectId)
+      .where('type', params.type)
+      .firstOrFail()
 
     const payload = request.body()
 

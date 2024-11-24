@@ -13,8 +13,6 @@ export default class SceneObjectsController {
     try {
       const sceneId = parseInt(params.sceneId, 10)
 
-      const object = new SceneObject().useTransaction(trx)
-
       const payload = await request.validate({
         schema: schema.create({
           name: schema.string(),
@@ -28,6 +26,14 @@ export default class SceneObjectsController {
         }),
       })
 
+      const object = new SceneObject().useTransaction(trx)
+
+      object.fill({
+        name: payload.name,
+      })
+
+      await object.save()
+
       const transform = new Component().useTransaction(trx)
         .fill({
           type: 'Transform',
@@ -40,26 +46,16 @@ export default class SceneObjectsController {
 
       await transform.save()
 
-      const components: number[] = [transform.id]
-
       if (payload.component) {
         const component = new Component().useTransaction(trx)
           .fill({
+            sceneObjectId: object.id,
             type: payload.component.type,
             props: payload.component.props,
           })
 
         await component.save()
-
-        components.push(component.id)
       }
-
-      object.fill({
-        name: payload.name,
-        components,
-      })
-
-      await object.save()
 
       const node = new TreeNode()
         .useTransaction(trx)
@@ -93,7 +89,6 @@ export default class SceneObjectsController {
     const payload = await request.validate({
       schema: schema.create({
         name: schema.string(),
-        components: schema.array().members(schema.number()),
       }),
     })
 
@@ -104,7 +99,6 @@ export default class SceneObjectsController {
 
       object.merge({
         name: payload.name,
-        components: payload.components,
       })
 
       await object.save()

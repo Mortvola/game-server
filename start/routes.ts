@@ -77,7 +77,7 @@ Route.group(() => {
   Route.get('/scene-objects-list', 'SceneObjectsController.getSceneObjectList')
 
   Route.group(() => {
-    Route.patch('/:id', 'ComponentsController.update')
+    Route.patch('/:sceneObjectId/:type', 'ComponentsController.update')
   }).prefix('/components')
 
   Route.group(() => {

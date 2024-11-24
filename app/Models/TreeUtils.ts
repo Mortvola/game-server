@@ -25,7 +25,7 @@ const isTreeNodeDescriptor = (r: unknown): r is TreeNodeDescriptor2 => (
 )
 
 type ComponentDescriptor = {
-  id: number,
+  sceneObjectId: number,
   type: string,
   props?: unknown,
 }
@@ -33,7 +33,7 @@ type ComponentDescriptor = {
 type SceneObjectDescriptor = {
   id: number,
   name: string,
-  components: number[],
+  components: string[],
 }
 
 export type NodesResponse = {
@@ -182,21 +182,20 @@ export const getTreeDescriptor = async (
           components: [],
         }
 
-        for (const compId of sceneObject.components) {
-          const component = await Component.find(compId, { client: trx })
+        const objectComponents = await Component.query({ client: trx })
+          .where('sceneObjectId', sceneObject.id)
 
-          if (component) {
-            components.set(
-              component.id,
-              {
-                id: component.id,
-                type: component.type,
-                props: component.props,
-              },
-            )
+        for (const component of objectComponents) {
+          components.set(
+            component.id,
+            {
+              sceneObjectId: sceneObject.id,
+              type: component.type,
+              props: component.props,
+            },
+          )
 
-            descriptor.components.push(component.id)
-          }
+          descriptor.components.push(component.type)
         }
 
         o.push(descriptor)

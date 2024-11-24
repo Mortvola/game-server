@@ -12,10 +12,13 @@ export default class Component extends BaseModel {
   public updatedAt: DateTime
 
   @column()
+  public sceneObjectId: number
+
+  @column()
   public type: string
 
   @column({
-    prepare: (value: unknown) => JSON.stringify(value),
+    prepare: (value: object) => JSON.stringify(value),
   })
-  public props: unknown
+  public props: object
 }

@@ -204,12 +204,11 @@ export default class TreeNodesController {
         const object = await SceneObject.find(node.sceneObjectId)
 
         if (object) {
-          for (const compId of object.components) {
-            const component = await Component.find(compId)
+          const components = await Component.query({ client: trx })
+            .where('sceneObjectId', object.id)
 
-            if (component) {
-              await component.delete()
-            }
+          for (const component of components) {
+            await component.delete()
           }
 
           await object.delete()
