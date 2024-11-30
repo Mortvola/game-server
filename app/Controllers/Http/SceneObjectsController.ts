@@ -36,6 +36,7 @@ export default class SceneObjectsController {
 
       const transform = new Component().useTransaction(trx)
         .fill({
+          sceneObjectId: object.id,
           type: 'Transform',
           props: {
             translate: [0, 0, 0],
