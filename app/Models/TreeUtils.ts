@@ -121,9 +121,9 @@ export const getTreeDescriptor = async (
         nodes.set(node.id, descriptor)
       }
     } else {
-      if (node.rootSceneId === null) {
-        throw new Error('rootSceneId is not set')
-      }
+      // if (node.rootSceneId === null) {
+      //   throw new Error('rootSceneId is not set')
+      // }
 
       // This is a modifier node.
 
